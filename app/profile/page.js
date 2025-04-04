@@ -273,6 +273,13 @@ export default function ProfilePage() {
           onChange={handleChange}
           className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400"
         />
+        <button
+            onClick={() => router.push("/submit")}
+            className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition"
+            >
+            📤 Submit a Recipe
+        </button>
+
 
         <button
           onClick={handleSave}
