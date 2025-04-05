@@ -1,6 +1,6 @@
 
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Howl } from "howler";
 import { supabase } from "../lib/supabaseClient";
@@ -64,6 +64,7 @@ function MoodTooltip({ label, children }) {
 
 
 
+
 export default function Home() {
   const [selectedMoods, setSelectedMoods] = useState([]);
   const [recipes, setRecipes] = useState({});
@@ -76,6 +77,8 @@ export default function Home() {
   const [eatOutMode, setEatOutMode] = useState(false);
   const [readyToShowMoods, setReadyToShowMoods] = useState(false);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const orbitRef = useRef(null);
+  const [orbitCenter, setOrbitCenter] = useState({ x: 0, y: 0 });
 
 
 
@@ -83,13 +86,84 @@ export default function Home() {
   const chimeSound = new Howl({ src: ["/sounds/chime.mp3"], volume: 0.4 });
   const bloopSound = new Howl({ src: ["/sounds/bloop.mp3"], volume: 0.4 });
 
+  const moodPositions = useMemo(() => {
+    const positions = {};
+    const filteredKeys = Object.keys(recipes).filter((key) => key !== "default");
+    const total = filteredKeys.length;
+  
+    filteredKeys.forEach((moodKey, i) => {
+      const ringIndex = i % 2;
+  
+      const innerRadius = Math.min(window.innerWidth, window.innerHeight) / 3.2;
+      const outerRadius = Math.min(window.innerWidth, window.innerHeight) / 2.3;
+      const radius = ringIndex === 0 ? innerRadius : outerRadius;
+  
+      const baseAngle = (360 / (total / 2)) * Math.floor(i / 2);
+      const offset = 360 / total / 2.5;
+      const angle = ringIndex === 1 ? baseAngle + offset : baseAngle;
+  
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2.15;
+  
+      const x = centerX + radius * Math.cos((angle * Math.PI) / 180);
+      const y = centerY + radius * Math.sin((angle * Math.PI) / 180);
+  
+      positions[moodKey] = { x, y };
+    });
+  
+    return positions;
+  }, [recipes]);
+  
+
+  // useEffect(() => {
+  //   const getUser = async () => {
+  //     const { data, error } = await supabase.auth.getUser();
+  //     if (data?.user) setUser(data.user);
+  //   };
+
+    
+  //   const fetchRecipes = async () => {
+  //     const { data, error } = await supabase.from("recipes").select("*");
+  //     if (error) {
+  //       console.error("Error fetching recipes:", error.message);
+  //     } else {
+  //       const formatted = {};
+  //       data.forEach((recipe) => {
+  //         recipe.moods.forEach((mood) => {
+  //           if (!formatted[mood]) {
+  //             formatted[mood] = [];
+  //           }
+  //           formatted[mood].push(recipe);
+  //         });
+  //       });
+  //       setRecipes(formatted);
+  //       console.log("Formatted recipes by mood:", formatted); // debug
+  //     }
+  //   };
+    
+
+  //   getUser();
+  //   setTimeout(() => setReadyToShowMoods(true), 300); // 300ms animation prep
+  //   fetchRecipes();
+
+  //   const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+  //     if (event === "SIGNED_IN") setUser(session.user);
+  //     if (event === "SIGNED_OUT") setUser(null);
+  //   });
+
+    
+    
+
+  //   return () => {
+  //     listener?.subscription.unsubscribe();
+  //   };
+  // }, []);
   useEffect(() => {
     const getUser = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (data?.user) setUser(data.user);
     };
-
-    
+  
     const fetchRecipes = async () => {
       const { data, error } = await supabase.from("recipes").select("*");
       if (error) {
@@ -105,27 +179,42 @@ export default function Home() {
           });
         });
         setRecipes(formatted);
-        console.log("Formatted recipes by mood:", formatted); // debug
       }
     };
-    
-
+  
+    const updateCenter = () => {
+      if (orbitRef.current) {
+        const rect = orbitRef.current.getBoundingClientRect();
+        setOrbitCenter({
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2 + window.scrollY,
+        });
+      }
+    };
+  
     getUser();
-    setTimeout(() => setReadyToShowMoods(true), 300); // 300ms animation prep
     fetchRecipes();
-
+  
+    // Delay updateCenter slightly to allow layout to finish
+    setTimeout(updateCenter, 0);
+  
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN") setUser(session.user);
       if (event === "SIGNED_OUT") setUser(null);
     });
-
-    
-    
-
+  
+    window.addEventListener("resize", updateCenter);
+    window.addEventListener("scroll", updateCenter);
+  
+    setTimeout(() => setReadyToShowMoods(true), 300);
+  
     return () => {
+      window.removeEventListener("resize", updateCenter);
+      window.removeEventListener("scroll", updateCenter);
       listener?.subscription.unsubscribe();
     };
   }, []);
+  
 
   const handleMultiMoodSubmit = () => {
     if (selectedMoods.length === 0) return;
@@ -159,6 +248,7 @@ export default function Home() {
       </div>
     );
   }
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12 text-center font-sans">
@@ -203,15 +293,11 @@ export default function Home() {
             {eatOutMode ? "Back to Mood Recipes" : "I'm Eating Out 🍽️"}
           </motion.button>
 
-          <div className="relative w-full h-[600px] flex items-center justify-center">
+          <div className="relative w-full h-[600px] sm:h-[650px] flex items-center justify-center">
             {/* Mood Buttons in orbit */}
             <motion.div
-              className="absolute"
-              style={{
-                left: isMobile ? "44%" : "48%",
-                top: isMobile ? "50%" : "46%",
-                transform: "translate(-50%, -50%)",
-              }}
+              className="absolute w-full h-full"
+              ref={orbitRef}
               initial="hidden"
               animate="visible"
               variants={{
@@ -220,97 +306,81 @@ export default function Home() {
                 },
               }}
             >
-              {Object.keys(recipes).length === 0 ? (
-                <p className="text-gray-500 text-center mt-20">Loading recipes...</p>
-              ) : (
-                Object.keys(recipes)
-                  .filter((moodKey) => moodKey !== "default")
-                  .map((moodKey, i, arr) => {
-                    const total = arr.length;
-                    const ringIndex = i % 2; // alternate layers
-                    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-                    const radius = ringIndex === 0 
-                      ? isMobile ? 110 : 150 
-                      : isMobile ? 170 : 200 ;
-                    // const radius = ringIndex === 0 ? 200 : 280;
-                    const baseAngle = (360 / (total / 2)) * Math.floor(i / 2)+ 15;
-                    // const offset = 360 / total / 2.5; // was /4 before
-                    const offset = isMobile ? 360 / total / 3.2 : 360 / total / 2.5;
+              {Object.keys(recipes)
+              .filter((moodKey) => moodKey !== "default")
+              .map((moodKey, i, arr) => {
+                const total = arr.length;
+                const ringIndex = i % 2;
 
-                    const angle = ringIndex === 0 ? baseAngle : baseAngle + offset;
+                const innerRadius = Math.min(window.innerWidth, window.innerHeight) / 3.2;
+                const outerRadius = Math.min(window.innerWidth, window.innerHeight) / 2.3;
+                const radius = ringIndex === 0 ? innerRadius : outerRadius;
 
-                    // const total = moodKeys.length;
-                    // const half = Math.ceil(total / 2);
-                    // const angleStep = 360 / half;
-                    // const offset = angleStep / 2;
-                    // const angle = ringIndex === 0 ? angleStep * i : angleStep * (i - half) + offset;
+                const baseAngle = (360 / (total / 2)) * Math.floor(i / 2);
+                const offset = 360 / total / 2.5;
+                const angle = ringIndex === 1 ? baseAngle + offset : baseAngle;
+
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2.15;
+
+                const x = centerX + radius * Math.cos((angle * Math.PI) / 180);
+                const y = centerY + radius * Math.sin((angle * Math.PI) / 180);
+
+                const pos = moodPositions[moodKey];
 
 
-                    // const angle = (360 / (total / 2)) * Math.floor(i / 2);
-                    // const baseAngle = (360 / (total / 2)) * Math.floor(i / 2);
-                    // const angle = ringIndex === 0 ? baseAngle : baseAngle + (360 / total / 4); // offset second ring
+                return (
+                  <motion.button
+                    key={moodKey}
+                    style={{
+                      position: "absolute",
+                      left: `${pos?.x}px`,
+                      top: `${pos?.y}px`,
+                      transform: "translate(-50%, -50%)",
+                    }}
+                    onClick={() => {
+                      clickSound.play();
+                      setSelectedMoods((prev) =>
+                        prev.includes(moodKey)
+                          ? prev.filter((m) => m !== moodKey)
+                          : [...prev, moodKey]
+                      );
+                    }}
+                    // whileTap={{ scale: 0.95 }}
+                    className={`w-[48px] h-[48px] flex items-center justify-center rounded-xl border-2 text-xl transition-all duration-150 ${
+                      selectedMoods.includes(moodKey)
+                        ? "bg-pink-200 border-pink-400"
+                        : "bg-white border-gray-300 hover:bg-pink-100"
+                    }`}
+                  >
+                    <MoodTooltip label={moodKey.charAt(0).toUpperCase() + moodKey.slice(1)}>
+                      <span>{moodEmojis[moodKey] || "🍽️"}</span>
+                    </MoodTooltip>
+                  </motion.button>
+                );
+              })}
 
 
-                    const x = radius * Math.cos((angle * Math.PI) / 180);
-                    const y = radius * Math.sin((angle * Math.PI) / 180);
-
-                    return (
-                      <motion.button
-                        key={moodKey}
-                        style={{
-                          position: "absolute",
-                          left: `${x}px`,
-                          top: `${y}px`,
-                          transform: "translate(-50%, -50%)",
-                        }}
-                        variants={{
-                          hidden: { opacity: 0, scale: 0.8 },
-                          visible: { opacity: 1, scale: 1 },
-                        }}
-                        onClick={() => {
-                          clickSound.play();
-                          setSelectedMoods((prev) =>
-                            prev.includes(moodKey)
-                              ? prev.filter((m) => m !== moodKey)
-                              : [...prev, moodKey]
-                          );
-                        }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`shadow-md px-3 py-1.5 rounded-xl border transition text-sm sm:text-base whitespace-nowrap ${
-                          selectedMoods.includes(moodKey)
-                            ? "bg-pink-200 border-pink-400"
-                            : "bg-white border-gray-300 hover:bg-pink-100"
-                        }`}
-                      >
-                       <MoodTooltip label={moodKey.charAt(0).toUpperCase() + moodKey.slice(1)}>
-                        <span>{moodEmojis[moodKey] || "🍽️"}</span>
-                      </MoodTooltip>
-
-
-                      </motion.button>
-                    );
-                  })
-              )}
             </motion.div>
 
-            {/* Rascal centered on same anchor */}
-            <motion.img
-            src="/rascal-fallback.png"
-            alt="Rascal Mascot"
-            animate={{ scale: [2, 2.05, 2] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="absolute z-20 rounded-full border-2 border-pink-300 shadow-lg bg-white object-contain"
-            style={{
-              width: window.innerWidth < 640 ? "64px" : "96px",  // Adjust sizes as needed
-              height: window.innerWidth < 640 ? "64px" : "96px",
-              // left: "46%",
-              // top: "40%",
-              // transform: "translate(-50%, -50%)",
-              left: isMobile ? "42%" : "46%",
-              top: isMobile ? "48%" : "40%",
-              transform: "translate(-50%, -50%)",
-            }}
-          />
+            {/* Rascal centered */}
+            {orbitCenter.x !== 0 && orbitCenter.y !== 0 && (
+              <motion.img
+              src="/rascal-fallback.png"
+              alt="Rascal Mascot"
+              animate={{ scale: [2, 2.05, 2] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="absolute z-20 rounded-full border-2 border-pink-300 shadow-lg bg-white object-contain"
+              style={{
+                width: window.innerWidth < 640 ? "64px" : "96px",
+                height: window.innerWidth < 640 ? "64px" : "96px",
+                left: `${window.innerWidth / 2.15}px`,
+                top: `${window.innerHeight / 2.5}px`, // match button orbit
+                transform: "translate(-50%, -50%)",
+              }}
+            />
+            )}
+
 
           </div>
 
