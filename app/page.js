@@ -229,7 +229,7 @@ export default function Home() {
                     const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
                     const radius = ringIndex === 0 
                       ? isMobile ? 200 : 280 
-                      : isMobile ? 130 : 200 ;
+                      : isMobile ? 130 : 170 ;
                     // const radius = ringIndex === 0 ? 200 : 280;
                     const baseAngle = (360 / (total / 2)) * Math.floor(i / 2)+ 15;
                     const offset = 360 / total / 2.5; // was /4 before
