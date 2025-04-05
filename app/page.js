@@ -228,8 +228,8 @@ export default function Home() {
                     const ringIndex = i % 2; // alternate layers
                     const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
                     const radius = ringIndex === 0 
-                      ? isMobile ? 200 : 200 
-                      : isMobile ? 110 : 110 ;
+                      ? isMobile ? 110 : 110 
+                      : isMobile ? 170 : 200 ;
                     // const radius = ringIndex === 0 ? 200 : 280;
                     const baseAngle = (360 / (total / 2)) * Math.floor(i / 2)+ 15;
                     // const offset = 360 / total / 2.5; // was /4 before
