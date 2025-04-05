@@ -41,6 +41,28 @@ const moodEmojis = {
   exhausted: "🥱",
 };
 
+function MoodTooltip({ label, children }) {
+  const [show, setShow] = useState(false);
+
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      onTouchStart={() => setShow(true)}
+      onTouchEnd={() => setShow(false)}
+    >
+      {children}
+      {show && (
+        <div className="absolute bottom-full mb-1 px-2 py-1 text-xs rounded bg-black text-white shadow z-50 whitespace-nowrap">
+          {label}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
 export default function Home() {
   const [selectedMoods, setSelectedMoods] = useState([]);
@@ -94,6 +116,9 @@ export default function Home() {
       if (event === "SIGNED_IN") setUser(session.user);
       if (event === "SIGNED_OUT") setUser(null);
     });
+
+    
+    
 
     return () => {
       listener?.subscription.unsubscribe();
@@ -181,8 +206,8 @@ export default function Home() {
             <motion.div
               className="absolute"
               style={{
-                left: "46%", // Adjust this if needed
-                top: "47%",
+                left: "48%", // Adjust this if needed
+                top: "46%",
                 transform: "translate(-50%, -50%)",
               }}
               initial="hidden"
@@ -201,9 +226,9 @@ export default function Home() {
                   .map((moodKey, i, arr) => {
                     const total = arr.length;
                     const ringIndex = i % 2; // alternate layers
-                    const radius = ringIndex === 0 ? 220 : 300;
-                    const baseAngle = (360 / (total / 2)) * Math.floor(i / 2);
-                    const offset = 360 / total / 3.5; // was /4 before
+                    const radius = ringIndex === 0 ? 200 : 280;
+                    const baseAngle = (360 / (total / 2)) * Math.floor(i / 2)+ 15;
+                    const offset = 360 / total / 2.5; // was /4 before
                     const angle = ringIndex === 0 ? baseAngle : baseAngle + offset;
 
                     // const total = moodKeys.length;
@@ -249,8 +274,11 @@ export default function Home() {
                             : "bg-white border-gray-300 hover:bg-pink-100"
                         }`}
                       >
-                        {moodEmojis[moodKey] || "🍽️"}{" "}
-                        {moodKey.charAt(0).toUpperCase() + moodKey.slice(1)}
+                       <MoodTooltip label={moodKey.charAt(0).toUpperCase() + moodKey.slice(1)}>
+                        <span>{moodEmojis[moodKey] || "🍽️"}</span>
+                      </MoodTooltip>
+
+
                       </motion.button>
                     );
                   })
@@ -266,7 +294,7 @@ export default function Home() {
               className="absolute z-20 w-24 h-24 rounded-full border-2 border-pink-300 shadow-lg bg-white object-contain"
               style={{
                 left: "46%", // Match the mood buttons
-                top: "46%",
+                top: "40%",
                 transform: "translate(-50%, -50%)",
               }}
             />
