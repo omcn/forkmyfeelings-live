@@ -75,6 +75,8 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [eatOutMode, setEatOutMode] = useState(false);
   const [readyToShowMoods, setReadyToShowMoods] = useState(false);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
 
 
   const clickSound = new Howl({ src: ["/sounds/click.mp3"], volume: 0.4 });
@@ -206,8 +208,8 @@ export default function Home() {
             <motion.div
               className="absolute"
               style={{
-                left: "48%", // Adjust this if needed
-                top: "46%",
+                left: isMobile ? "50%" : "48%",
+                top: isMobile ? "50%" : "46%",
                 transform: "translate(-50%, -50%)",
               }}
               initial="hidden"
@@ -228,7 +230,7 @@ export default function Home() {
                     const ringIndex = i % 2; // alternate layers
                     const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
                     const radius = ringIndex === 0 
-                      ? isMobile ? 110 : 110 
+                      ? isMobile ? 110 : 150 
                       : isMobile ? 170 : 200 ;
                     // const radius = ringIndex === 0 ? 200 : 280;
                     const baseAngle = (360 / (total / 2)) * Math.floor(i / 2)+ 15;
@@ -301,8 +303,11 @@ export default function Home() {
             style={{
               width: window.innerWidth < 640 ? "64px" : "96px",  // Adjust sizes as needed
               height: window.innerWidth < 640 ? "64px" : "96px",
-              left: "46%",
-              top: "42%",
+              // left: "46%",
+              // top: "40%",
+              // transform: "translate(-50%, -50%)",
+              left: isMobile ? "50%" : "46%",
+              top: isMobile ? "50%" : "40%",
               transform: "translate(-50%, -50%)",
             }}
           />
