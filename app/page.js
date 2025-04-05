@@ -306,8 +306,8 @@ export default function Home() {
               // left: "46%",
               // top: "40%",
               // transform: "translate(-50%, -50%)",
-              left: isMobile ? "43%" : "46%",
-              top: isMobile ? "50%" : "40%",
+              left: isMobile ? "42%" : "46%",
+              top: isMobile ? "48%" : "40%",
               transform: "translate(-50%, -50%)",
             }}
           />
