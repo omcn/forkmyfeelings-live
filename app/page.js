@@ -306,7 +306,7 @@ export default function Home() {
               // left: "46%",
               // top: "40%",
               // transform: "translate(-50%, -50%)",
-              left: isMobile ? "46%" : "46%",
+              left: isMobile ? "45%" : "46%",
               top: isMobile ? "50%" : "40%",
               transform: "translate(-50%, -50%)",
             }}
