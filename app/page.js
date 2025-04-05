@@ -543,13 +543,18 @@ export default function Home() {
       } else {
         const formatted = {};
         data.forEach((recipe) => {
-          recipe.moods.forEach((mood) => {
+          const moods = typeof recipe.moods === "string"
+            ? JSON.parse(recipe.moods)
+            : recipe.moods;
+
+          moods.forEach((mood) => {
             if (!formatted[mood]) {
               formatted[mood] = [];
             }
             formatted[mood].push(recipe);
           });
         });
+
         setRecipes(formatted);
         console.log("Formatted recipes by mood:", formatted); // debug
       }
@@ -573,23 +578,50 @@ export default function Home() {
     };
   }, []);
 
+  // const handleMultiMoodSubmit = () => {
+  //   if (selectedMoods.length === 0) return;
+  //   // const chosen = selectedMoods[Math.floor(Math.random() * selectedMoods.length)];
+  //   // setRecipe(recipes[chosen]);
+  //   const mood = selectedMoods[Math.floor(Math.random() * selectedMoods.length)];
+  //   const moodRecipes = recipes[mood];
+  //   const randomRecipe = moodRecipes[Math.floor(Math.random() * moodRecipes.length)];
+  //   setRecipe(randomRecipe);
+
+  //   setCookingMode(false);
+  //   setShowSuggestionMessage(true);
+  //   setShowRecipeCard(false);
+  //   setTimeout(() => {
+  //     setShowSuggestionMessage(false);
+  //     setShowRecipeCard(true);
+  //   }, 2000);
+  // };
   const handleMultiMoodSubmit = () => {
     if (selectedMoods.length === 0) return;
-    // const chosen = selectedMoods[Math.floor(Math.random() * selectedMoods.length)];
-    // setRecipe(recipes[chosen]);
-    const mood = selectedMoods[Math.floor(Math.random() * selectedMoods.length)];
-    const moodRecipes = recipes[mood];
-    const randomRecipe = moodRecipes[Math.floor(Math.random() * moodRecipes.length)];
+  
+    // Combine recipes across all selected moods
+    const allMatchingRecipes = selectedMoods.flatMap((mood) => recipes[mood] || []);
+  
+    // Remove duplicates by recipe ID (in case a recipe matches multiple moods)
+    const uniqueRecipes = Array.from(new Map(
+      allMatchingRecipes.map((recipe) => [recipe.id, recipe])
+    ).values());
+  
+    // Pick a truly random one from the full pool
+    if (uniqueRecipes.length === 0) return;
+    const randomRecipe = uniqueRecipes[Math.floor(Math.random() * uniqueRecipes.length)];
+  
     setRecipe(randomRecipe);
-
     setCookingMode(false);
     setShowSuggestionMessage(true);
     setShowRecipeCard(false);
+  
     setTimeout(() => {
       setShowSuggestionMessage(false);
       setShowRecipeCard(true);
     }, 2000);
   };
+  
+  
 
   const handleReshuffle = () => {
     setRecipe(null);
@@ -807,9 +839,14 @@ export default function Home() {
               <div className="text-left text-gray-800 mb-4">
                 <h3 className="font-semibold mb-1">🧂 Ingredients</h3>
                 <ul className="list-disc list-inside">
-                  {recipe.ingredients.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
+                {(
+                  Array.isArray(recipe.ingredients)
+                    ? recipe.ingredients
+                    : JSON.parse(recipe.ingredients || "[]")
+                ).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+
                 </ul>
               </div>
             )}
@@ -844,15 +881,28 @@ export default function Home() {
 
       {eatOutMode && <EatOutSuggestions selectedMoods={selectedMoods} />}
 
-      {cookingMode && recipe?.steps && (
+      
+
+      {cookingMode && (() => {
+      let stepsArray = [];
+      try {
+        stepsArray = Array.isArray(recipe.steps)
+          ? recipe.steps
+          : JSON.parse(recipe.steps || "[]");
+      } catch (err) {
+        console.error("❌ Failed to parse steps", err);
+      }
+
+      return (
         <div className="mt-6 bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             {recipe.emoji} {recipe.name}
           </h2>
           <h3 className="text-xl font-semibold mb-2">
-            Step {activeStepIndex + 1} of {recipe.steps.length}
+            Step {activeStepIndex + 1} of {stepsArray.length}
           </h3>
-          <p className="text-gray-800 mb-4">{recipe.steps[activeStepIndex]}</p>
+          <p className="text-gray-800 mb-4">{stepsArray[activeStepIndex]}</p>
+
           <div className="flex justify-between items-center">
             <button
               onClick={() => setActiveStepIndex((i) => Math.max(0, i - 1))}
@@ -861,10 +911,10 @@ export default function Home() {
             >
               ← Back
             </button>
-            {activeStepIndex < recipe.steps.length - 1 ? (
+            {activeStepIndex < stepsArray.length - 1 ? (
               <button
                 onClick={() =>
-                  setActiveStepIndex((i) => Math.min(recipe.steps.length - 1, i + 1))
+                  setActiveStepIndex((i) => Math.min(stepsArray.length - 1, i + 1))
                 }
                 className="text-sm text-pink-500 hover:text-pink-700"
               >
@@ -883,7 +933,10 @@ export default function Home() {
             )}
           </div>
         </div>
-      )}
-    </div>
-  );
+      );
+    })()}
+
+  </div> // ← make sure you're still inside this main return div
+);
 }
+  

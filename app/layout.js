@@ -53,7 +53,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head>
         {/* ✅ Add this line for your favicon */}
-        <link rel="icon" href="rascal-fallback.png" type="image/png" />
+        <link rel="icon" href="/rascal-fallback.png" type="image/png" />
       </head>
       <body className="font-sans bg-rose-50 text-gray-900">
         {children}
