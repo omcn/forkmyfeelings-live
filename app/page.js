@@ -229,7 +229,7 @@ export default function Home() {
                     const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
                     const radius = ringIndex === 0 
                       ? isMobile ? 200 : 280 
-                      : isMobile ? 100 : 180;
+                      : isMobile ? 200 : 200;
                     // const radius = ringIndex === 0 ? 200 : 280;
                     const baseAngle = (360 / (total / 2)) * Math.floor(i / 2)+ 15;
                     const offset = 360 / total / 2.5; // was /4 before
@@ -291,17 +291,20 @@ export default function Home() {
 
             {/* Rascal centered on same anchor */}
             <motion.img
-              src="/rascal-fallback.png"
-              alt="Rascal Mascot"
-              animate={{ scale: [2, 2.05, 2] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="absolute z-20 w-24 h-24 rounded-full border-2 border-pink-300 shadow-lg bg-white object-contain"
-              style={{
-                left: "46%", // Match the mood buttons
-                top: "40%",
-                transform: "translate(-50%, -50%)",
-              }}
-            />
+            src="/rascal-fallback.png"
+            alt="Rascal Mascot"
+            animate={{ scale: [2, 2.05, 2] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className="absolute z-20 rounded-full border-2 border-pink-300 shadow-lg bg-white object-contain"
+            style={{
+              width: window.innerWidth < 640 ? "64px" : "96px",  // Adjust sizes as needed
+              height: window.innerWidth < 640 ? "64px" : "96px",
+              left: "46%",
+              top: "46%",
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+
           </div>
 
 
