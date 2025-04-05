@@ -232,7 +232,9 @@ export default function Home() {
                       : isMobile ? 110 : 130 ;
                     // const radius = ringIndex === 0 ? 200 : 280;
                     const baseAngle = (360 / (total / 2)) * Math.floor(i / 2)+ 15;
-                    const offset = 360 / total / 2.5; // was /4 before
+                    // const offset = 360 / total / 2.5; // was /4 before
+                    const offset = isMobile ? 360 / total / 3.2 : 360 / total / 2.5;
+
                     const angle = ringIndex === 0 ? baseAngle : baseAngle + offset;
 
                     // const total = moodKeys.length;
