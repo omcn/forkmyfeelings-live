@@ -226,7 +226,11 @@ export default function Home() {
                   .map((moodKey, i, arr) => {
                     const total = arr.length;
                     const ringIndex = i % 2; // alternate layers
-                    const radius = ringIndex === 0 ? 200 : 280;
+                    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+                    const radius = ringIndex === 0 
+                      ? isMobile ? 200 : 280 
+                      : isMobile ? 100 : 180;
+                    // const radius = ringIndex === 0 ? 200 : 280;
                     const baseAngle = (360 / (total / 2)) * Math.floor(i / 2)+ 15;
                     const offset = 360 / total / 2.5; // was /4 before
                     const angle = ringIndex === 0 ? baseAngle : baseAngle + offset;
