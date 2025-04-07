@@ -7,10 +7,14 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Howl } from "howler";
-import { supabase } from "../lib/supabaseClient";
+
 import AuthForm from "./components/AuthForm";
 import EatOutSuggestions from "./components/EatOutSuggestion";
 import ingredientPrices from "../data/mockPrice";
+import RecipePostCapture from "./components/RecipePostCapture";
+import { supabase } from "../lib/supabaseClient";
+
+import { mergeImages } from "../lib/mergeImages";
 
 // import { motion } from "framer-motion";
 
@@ -88,6 +92,8 @@ export default function Home() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [moodRating, setMoodRating] = useState(0);
+  const [showPostCapture, setShowPostCapture]= useState(false);
+
 
 
 
@@ -115,6 +121,20 @@ export default function Home() {
       console.log("✅ Rating saved:", ratingValue);
     }
   };
+
+  // {showPostCapture && (
+  //   <RecipePostCapture
+  //     user={user}
+  //     recipe={recipe}
+  //     moods={selectedMoods}
+  //     rating={rating}
+  //     onComplete={() => {
+  //       setShowPostCapture(false);
+  //       handleReshuffle();
+  //     }}
+  //   />
+  // )}
+  
   
   
 
@@ -413,7 +433,30 @@ export default function Home() {
             Based on your vibe... 💫
           </motion.div>
         )}
+
+        {showPostCapture && user &&(
+          <motion.div
+            key="post-capture"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.6 }}
+          >
+            <RecipePostCapture
+              user={user}
+              recipe={recipe}
+              moods={selectedMoods}
+              rating={moodRating}
+              onComplete={() => {
+                setShowPostCapture(false);
+                handleReshuffle();
+              }}
+            />
+          </motion.div>
+        )}
       </AnimatePresence>
+
+
 
       <AnimatePresence>
         {showRecipeCard && recipe && !cookingMode && (
@@ -674,10 +717,11 @@ export default function Home() {
                         setCookingMode(false);
                         setActiveStepIndex(0);
                         setShowRatingModal(false);
-                        setRecipe(null);           // 👈 reset the selected recipe
+                        // setRecipe(null);           // 👈 reset the selected recipe
                         setActiveStepIndex(0); 
                         submitRecipeRating(moodRating);
-                        handleReshuffle();
+                        setShowPostCapture(true);
+                        // handleReshuffle();
                             // 👈 reset step
                         console.log("Saved mood rating:", moodRating);
                         // Later: Save to Supabase
