@@ -452,6 +452,8 @@ import { Howl } from "howler";
 import { supabase } from "../lib/supabaseClient";
 import AuthForm from "./components/AuthForm";
 import EatOutSuggestions from "./components/EatOutSuggestion";
+import ingredientPrices from "../data/mockPrice";
+
 // import { motion } from "framer-motion";
 
 const moodEmojis = {
@@ -486,6 +488,8 @@ const moodEmojis = {
   chill: "🧊",
   exhausted: "🥱",
 };
+
+
 
 function MoodTooltip({ label, children }) {
   const [show, setShow] = useState(false);
@@ -522,12 +526,19 @@ export default function Home() {
   const [eatOutMode, setEatOutMode] = useState(false);
   const [readyToShowMoods, setReadyToShowMoods] = useState(false);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const [showShoppingList, setShowShoppingList] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+
 
 
 
   const clickSound = new Howl({ src: ["/sounds/click.mp3"], volume: 0.4 });
   const chimeSound = new Howl({ src: ["/sounds/chime.mp3"], volume: 0.4 });
   const bloopSound = new Howl({ src: ["/sounds/bloop.mp3"], volume: 0.4 });
+
+  
+  
 
   useEffect(() => {
     const getUser = async () => {
@@ -875,9 +886,101 @@ export default function Home() {
             >
               I’m not feeling it
             </motion.button>
+
+            <motion.button
+              onClick={() => setShowShoppingList(true)}
+              whileTap={{ scale: 0.96 }}
+              className="mt-3 bg-green-100 hover:bg-green-200 text-green-800 font-medium py-2 px-4 rounded-xl transition"
+            >
+              🛒 Let’s Go Shopping
+            </motion.button>
+
           </motion.div>
         )}
       </AnimatePresence>
+      {showShoppingList && recipe && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
+            <button
+              onClick={() => setShowShoppingList(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-xl"
+            >
+              ✕
+            </button>
+            <h2 className="text-2xl font-semibold mb-4 text-center">🛍️ Shopping List</h2>
+            <ul className="list-disc list-inside text-left space-y-1 text-gray-800">
+            {(
+              Array.isArray(recipe.ingredients)
+                ? recipe.ingredients
+                : JSON.parse(recipe.ingredients || "[]")
+            ).map((item, index) => {
+              const normalized = item
+                .toLowerCase()
+                .replace(/^(to serve|drizzle|handful|slice[ds]?|chopped|diced|sliced|crushed|peeled|minced|grated|halved|zest(ed)?|juice(d)?|large|small|medium|extra large|cloves?)\b/g, "")
+                .replace(/^[\d\/\s,.]+(g|kg|ml|l|oz|tblsp|tbsp|tsp|cup|tablespoons?|teaspoons?)?\s*/g, "")
+                .replace(/[^a-z\s]/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+
+              const price = ingredientPrices[normalized];
+              if (!price) {
+                console.log("🧐 Missing price for:", normalized);
+              }
+
+              return (
+                <li key={index}>
+                  {item} –{" "}
+                  {price !== undefined ? `£${price.toFixed(2)}` : "£N/A"}
+                </li>
+              );
+            })}
+
+
+            </ul>
+            <div className="mt-4 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  const list = (
+                    Array.isArray(recipe.ingredients)
+                      ? recipe.ingredients
+                      : JSON.parse(recipe.ingredients || "[]")
+                  ).join("\n");
+
+                  navigator.clipboard.writeText(list).then(() => {
+                    setCopySuccess(true);
+                    setTimeout(() => setCopySuccess(false), 2000);
+                  });
+                }}
+                className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-xl transition"
+              >
+                📋 Copy to Clipboard
+              </button>
+
+              <a
+                href={`data:text/plain;charset=utf-8,${encodeURIComponent(
+                  (
+                    Array.isArray(recipe.ingredients)
+                      ? recipe.ingredients
+                      : JSON.parse(recipe.ingredients || "[]")
+                  ).join("\n")
+                )}`}
+                download={`shopping-list-${recipe.name.replace(/\s+/g, "-").toLowerCase()}.txt`}
+                className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-xl transition text-center"
+              >
+                💾 Save to Notes
+              </a>
+              {copySuccess && (
+                <p className="text-green-600 mt-2 text-sm text-center">
+                  ✅ Copied to clipboard!
+                </p>
+              )}
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
 
       {eatOutMode && <EatOutSuggestions selectedMoods={selectedMoods} />}
 
