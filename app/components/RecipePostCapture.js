@@ -15,30 +15,80 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
   const [selfie, setSelfie] = useState(null);
   const [meal, setMeal] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+ 
+  const [facingMode, setFacingMode] = useState("user");
+  const [isMobile, setIsMobile] = useState(false);
 
 
   // Re-fetch user if not passed in
+  // useEffect(() => {
+  //   if (!initialUser) {
+  //     supabase.auth.getUser().then(({ data }) => {
+  //       if (data?.user) {
+  //         // alert("Fetched user from Supabase");
+  //         setUser(data.user);
+  //       } else {
+  //         alert("No user from Supabase");
+  //       }
+  //     });
+  //   }
+  // }, [initialUser]);
   useEffect(() => {
+    // Re-fetch user if not passed in
     if (!initialUser) {
       supabase.auth.getUser().then(({ data }) => {
         if (data?.user) {
-          // alert("Fetched user from Supabase");
           setUser(data.user);
         } else {
           alert("No user from Supabase");
         }
       });
     }
-  }, [initialUser]);
-
-  useEffect(() => {
+  
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { exact: facingMode },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+        });
+  
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
         }
+      } catch (err) {
+        console.error("Camera error:", err);
+      }
+    };
+  
+    // Only start camera if we're not in the preview step
+    if (step !== "preview") {
+      startCamera();
+    }
+  
+    // Clean up camera on unmount or step change
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [facingMode, step, initialUser]);
+  
+
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "user" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+        });
+        
       } catch (err) {
         console.error("Camera error:", err);
       }
@@ -53,6 +103,7 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
     };
   }, []);
 
+  
   // const capture = () => {
   //   const video = videoRef.current;
   //   const canvas = document.createElement("canvas");
@@ -60,16 +111,20 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
   //   canvas.height = video.videoHeight;
   //   canvas.getContext("2d").drawImage(video, 0, 0);
   //   const dataUrl = canvas.toDataURL("image/jpeg");
-
+  
   //   if (step === "selfie") {
   //     setSelfie(dataUrl);
   //     setStep("meal");
-  //   } else {
+  //   } else if (step === "meal") {
   //     setMeal(dataUrl);
   //     setStep("preview");
-  //     if (streamRef.current) {
-  //       streamRef.current.getTracks().forEach(track => track.stop());
-  //     }
+  
+  //     // 👇 Delayed stop to avoid capturing stale frame
+  //     setTimeout(() => {
+  //       if (streamRef.current) {
+  //         streamRef.current.getTracks().forEach((track) => track.stop());
+  //       }
+  //     }, 200);
   //   }
   // };
   const capture = () => {
@@ -82,12 +137,18 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
   
     if (step === "selfie") {
       setSelfie(dataUrl);
+  
+      // 🔁 Flip to back cam ONLY on mobile
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setFacingMode("environment");
+      }
+  
       setStep("meal");
     } else if (step === "meal") {
       setMeal(dataUrl);
       setStep("preview");
   
-      // 👇 Delayed stop to avoid capturing stale frame
+      // Slight delay before killing the camera
       setTimeout(() => {
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
@@ -95,6 +156,7 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
       }, 200);
     }
   };
+  
   
 
   const submitPost = async () => {
@@ -168,17 +230,30 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
   };
   
 
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-lg max-w-md mx-auto text-center">
-      {step !== "preview" && (
-        <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="w-full rounded-lg"
-      />
+        return (
+          <div className="bg-white p-6 rounded-xl shadow-lg max-w-md mx-auto text-center">
+            {step !== "preview" && (
+              <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full rounded-lg"
+            />
+            )}
+            {isMobile && step !== "preview" && (
+        <button
+          onClick={() =>
+            setFacingMode((prev) =>
+              prev === "user" ? "environment" : "user"
+            )
+          }
+          className="mt-2 text-sm text-pink-600 underline"
+        >
+          🔄 Flip Camera
+        </button>
       )}
+
 
       <div className="mt-4">
         {step !== "preview" ? (
