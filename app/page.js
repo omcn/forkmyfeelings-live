@@ -301,13 +301,27 @@ export default function Home() {
           <motion.button
             onClick={() => {
               bloopSound.play();
-              setEatOutMode(!eatOutMode);
+              const turningOn = !eatOutMode;
+              setEatOutMode(turningOn);
+
+              if (turningOn && "geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    console.log("📍 Location:", position.coords.latitude, position.coords.longitude);
+                    // You can optionally store the coords in state here if needed
+                  },
+                  (error) => {
+                    console.warn("⚠️ Location error:", error.message);
+                  }
+                );
+              }
             }}
             whileTap={{ scale: 0.97 }}
             className="mb-4 bg-purple-200 hover:bg-purple-300 text-purple-800 font-semibold py-2 px-4 rounded-xl shadow-sm transition"
           >
             {eatOutMode ? "Back to Mood Recipes" : "I'm Eating Out 🍽️"}
           </motion.button>
+
 
           <div className="relative w-full h-[600px] flex items-center justify-center">
             {/* Mood Buttons in orbit */}
