@@ -14,6 +14,8 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
   const [step, setStep] = useState("selfie");
   const [selfie, setSelfie] = useState(null);
   const [meal, setMeal] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
 
   // Re-fetch user if not passed in
   useEffect(() => {
@@ -94,6 +96,9 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
     try {
       const combined = await mergeImages(selfie, meal);
       const blob = combined;
+
+      const imageUrl = URL.createObjectURL(blob);
+      setPreviewUrl(imageUrl);
       const fileName = `recipe-post-${Date.now()}.jpg`;
   
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -162,6 +167,15 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
                 alt="Selfie"
                 className="w-24 h-24 object-cover rounded-full border-2 border-white shadow-lg absolute top-4 left-4"
               />
+              {/* {previewUrl && (
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="w-full rounded-lg shadow-xl"
+                />
+              )} */}
+
+
             </div>
 
             <button

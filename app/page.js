@@ -93,6 +93,8 @@ export default function Home() {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [moodRating, setMoodRating] = useState(0);
   const [showPostCapture, setShowPostCapture]= useState(false);
+  const [showFeed, setShowFeed] = useState(false);
+  const [posts, setPosts] = useState([]);
 
 
 
@@ -147,6 +149,18 @@ export default function Home() {
     if (recipe) {
       setMoodRating(null); // reset stars on new recipe
     }
+
+    const loadPosts = async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("recipe_posts")
+        .select("*")
+        .gte("created_at", today)
+        .order("created_at", { ascending: false });
+  
+      if (!error) setPosts(data);
+    };
+    loadPosts();
 
     
     const fetchRecipes = async () => {
@@ -624,6 +638,7 @@ export default function Home() {
       } catch (err) {
         console.error("❌ Failed to parse steps", err);
       }
+      
 
       return (
         <div className="mt-6 bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
@@ -734,11 +749,78 @@ export default function Home() {
                 </div>
               </div>
             )}
+            
+
+            {/* </div> // 👈 LEAVE THIS — it closes your main return */}
+
+           
+
+
+            
 
           </div>
         </div>
       );
     })()}
+    {!cookingMode && !showRecipeCard && !showRatingModal && (
+  <>
+    <button
+      onClick={() => setShowFeed(true)}
+      className="fixed bottom-6 right-6 bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-full shadow-xl z-50"
+    >
+      📸 Today’s Feed
+    </button>
+
+    {showFeed && (
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 120 }}
+        className="fixed inset-0 bg-white z-50 overflow-y-auto px-4 pt-6 pb-16"
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-bold">📸 Today’s Forks</h2>
+          <button
+            onClick={() => setShowFeed(false)}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            ✕ Close
+          </button>
+        </div>
+
+        {posts.length === 0 ? (
+          <p className="text-gray-500 text-center mt-10">
+            No posts yet today!
+          </p>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {posts.map((post) => (
+              <div
+                key={post.id}
+                className="bg-gray-50 p-4 rounded-xl shadow-md"
+              >
+                <img
+                  src={post.photo_url}
+                  alt="Post"
+                  className="rounded-md mb-2 w-full object-cover"
+                />
+                <div className="text-sm text-gray-700">
+                  <p>🧠 Mood: {post.moods}</p>
+                  <p>⭐ {post.rating || "Unrated"}</p>
+                  <p className="text-xs text-gray-400">
+                    🕒 {new Date(post.created_at).toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    )}
+  </>
+)}
+
 
   </div> // ← make sure you're still inside this main return div
 );
