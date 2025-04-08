@@ -53,6 +53,25 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
     };
   }, []);
 
+  // const capture = () => {
+  //   const video = videoRef.current;
+  //   const canvas = document.createElement("canvas");
+  //   canvas.width = video.videoWidth;
+  //   canvas.height = video.videoHeight;
+  //   canvas.getContext("2d").drawImage(video, 0, 0);
+  //   const dataUrl = canvas.toDataURL("image/jpeg");
+
+  //   if (step === "selfie") {
+  //     setSelfie(dataUrl);
+  //     setStep("meal");
+  //   } else {
+  //     setMeal(dataUrl);
+  //     setStep("preview");
+  //     if (streamRef.current) {
+  //       streamRef.current.getTracks().forEach(track => track.stop());
+  //     }
+  //   }
+  // };
   const capture = () => {
     const video = videoRef.current;
     const canvas = document.createElement("canvas");
@@ -60,18 +79,23 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
     canvas.height = video.videoHeight;
     canvas.getContext("2d").drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL("image/jpeg");
-
+  
     if (step === "selfie") {
       setSelfie(dataUrl);
       setStep("meal");
-    } else {
+    } else if (step === "meal") {
       setMeal(dataUrl);
       setStep("preview");
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+  
+      // 👇 Delayed stop to avoid capturing stale frame
+      setTimeout(() => {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+        }
+      }, 200);
     }
   };
+  
 
   const submitPost = async () => {
     
@@ -147,7 +171,13 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
   return (
     <div className="bg-white p-6 rounded-xl shadow-lg max-w-md mx-auto text-center">
       {step !== "preview" && (
-        <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg" />
+        <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="w-full rounded-lg"
+      />
       )}
 
       <div className="mt-4">
