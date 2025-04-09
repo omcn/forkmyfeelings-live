@@ -7,6 +7,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 import FindFriends from "../components/FindFriends.js"; // adjust path if needed
+import FriendRequests from "../components/FriendRequests";
+import FriendList from "../components/FriendList";
+
+
 
 
 export default function ProfilePage() {
@@ -16,6 +20,21 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [showFindFriends, setShowFindFriends] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
+  const [incomingCount, setIncomingCount] = useState(0);
+  const [showFriends, setShowFriends] = useState(false);
+
+
+  const refreshIncomingRequests = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("friendships")
+      .select("*")
+      .eq("friend_id", user.id)
+      .eq("status", "pending");
+  
+    if (!error) setIncomingCount(data.length);
+  };
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -41,6 +60,20 @@ export default function ProfilePage() {
 
       setLoading(false);
     };
+
+    
+    const fetchIncomingRequests = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("friendships")
+        .select("*")
+        .eq("friend_id", user.id)
+        .eq("status", "pending");
+    
+      if (!error) setIncomingCount(data.length);
+    };
+    fetchIncomingRequests();
+    
 
     fetchUserAndProfile();
   }, []);
@@ -90,6 +123,7 @@ export default function ProfilePage() {
       console.error(uploadError);
       return;
     }
+    
 
     const {
       data: { publicUrl },
@@ -115,11 +149,17 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-6 py-12">
-      <img
-        src={profile?.avatar_url || "/rascal-fallback.png"}
-        alt="Profile"
-        className="w-24 h-24 rounded-full border-4 border-pink-400 mb-4 object-cover"
-      />
+      <div className="relative inline-block">
+        <img
+          src={profile?.avatar_url || "/rascal-fallback.png"}
+          alt="Profile"
+          className="w-24 h-24 rounded-full border-4 border-pink-400 mb-4 object-cover"
+        />
+        {incomingCount > 0 && (
+          <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 border-2 border-white rounded-full"></span>
+        )}
+      </div>
+
 
       <label className="mt-2 text-sm text-pink-700 font-medium">
         Change profile picture
@@ -161,6 +201,23 @@ export default function ProfilePage() {
         >
           🔍 Find Friends
         </button>
+        <button
+          onClick={() => setShowRequests(true)}
+          className="relative mt-4 bg-yellow-300 hover:bg-yellow-400 text-yellow-900 font-semibold py-2 px-4 rounded-xl transition"
+        >
+          👥 requests
+          {incomingCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 w-4 h-4 rounded-full text-white text-xs flex items-center justify-center">
+              {incomingCount}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setShowFriends(true)}
+          className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-xl transition"
+        >
+          🧑‍🤝‍🧑 My Friends
+        </button>
 
         <button
             onClick={() => router.push("/submit")}
@@ -183,6 +240,35 @@ export default function ProfilePage() {
           onClose={() => setShowFindFriends(false)}
         />
       )}
+      {showFriends && (
+        <FriendList
+          currentUser={user}
+          onClose={() => setShowFriends(false)}
+        />
+      )}
+      {showRequests && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative">
+            <button
+              onClick={() => setShowRequests(false)}
+              className="absolute top-2 right-3 text-gray-400 hover:text-gray-700 text-xl"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold mb-4">👥 Friend Requests</h2>
+
+            {incomingCount === 0 ? (
+              <p className="text-center text-gray-500">No new requests</p>
+            ) : (
+              <FriendRequests currentUser={user} onClose={() => {
+                setShowRequests(false);
+                refreshIncomingRequests(); // ✅ refresh on close
+              }} />
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
