@@ -8,30 +8,66 @@ export default function AuthForm({ onAuthSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState("");
 
+  // const handleAuth = async (e) => {
+  //   e.preventDefault();
+  //   setError("");
+  
+  //   const { data, error } = isLogin
+  //     ? await supabase.auth.signInWithPassword({ email, password })
+  //     : await supabase.auth.signUp({ email, password });
+  
+  //   if (error) {
+  //     setError(error.message);
+  //   } else {
+  //     // 🔥 Add this block after sign up to sync profile
+  //     if (!isLogin && data?.user) {
+  //       await supabase.from("profiles").upsert({
+  //         id: data.user.id,
+  //         email: data.user.email,
+  //         username: "",  // You could optionally ask for username at sign up
+  //         bio: "",
+  //       });
+  //     }
+  
+  //     onAuthSuccess?.(data);
+  //   }
+  // };
   const handleAuth = async (e) => {
     e.preventDefault();
     setError("");
   
-    const { data, error } = isLogin
+    const { data, error: authError } = isLogin
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password });
   
-    if (error) {
-      setError(error.message);
-    } else {
-      // 🔥 Add this block after sign up to sync profile
-      if (!isLogin && data?.user) {
-        await supabase.from("profiles").upsert({
-          id: data.user.id,
-          email: data.user.email,
-          username: "",  // You could optionally ask for username at sign up
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+  
+    // ✅ Handle post-signup profile creation
+    if (!isLogin) {
+      const userId = data?.user?.id || data?.session?.user?.id;
+      const userEmail = data?.user?.email || data?.session?.user?.email;
+  
+      if (userId && userEmail) {
+        const { error: profileError } = await supabase.from("profiles").upsert({
+          id: userId,
+          email: userEmail,
+          username: "",
           bio: "",
         });
-      }
   
-      onAuthSuccess?.(data);
+        if (profileError) {
+          setError("Profile creation failed: " + profileError.message);
+          return;
+        }
+      }
     }
+  
+    onAuthSuccess?.(data);
   };
+  
   
 
   return (
