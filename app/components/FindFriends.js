@@ -96,7 +96,7 @@ export default function FindFriends({ currentUser, onClose }) {
     ]);
   
     if (error) {
-      console.error("❌ Failed to send request:", error.message);
+      alert("❌ Failed to send request:", error.message);
       alert("Something went wrong!", error);
     } else {
       alert("✅ Friend request sent!");
