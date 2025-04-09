@@ -1,132 +1,13 @@
 
 
-// "use client";
-// import { useEffect, useState } from "react";
-// import { supabase } from "../../lib/supabaseClient";
-// import { useRouter } from "next/navigation";
 
-
-// export default function ProfilePage() {
-//   const router = useRouter();
-
-//   const [user, setUser] = useState(null);
-//   const [profile, setProfile] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [formData, setFormData] = useState({
-//     username: "",
-//     bio: "",
-//   });
-
-//   // Load auth user + profile
-//   useEffect(() => {
-//     const fetchUserAndProfile = async () => {
-//       const { data: authData } = await supabase.auth.getUser();
-//       const user = authData?.user;
-//       setUser(user);
-
-//       if (user) {
-//         const { data, error } = await supabase
-//           .from("profiles")
-//           .select("*")
-//           .eq("id", user.id)
-//           .single();
-
-//         if (!error && data) {
-//           setProfile(data);
-//           setFormData({
-//             username: data.username || "",
-//             bio: data.bio || "",
-//           });
-//         }
-//       }
-
-//       setLoading(false);
-//     };
-
-//     fetchUserAndProfile();
-//   }, []);
-
-//   const handleChange = (e) => {
-//     setFormData((prev) => ({
-//       ...prev,
-//       [e.target.name]: e.target.value,
-//     }));
-//   };
-
-//   const handleSave = async () => {
-//     if (!user) return;
-
-//     const updates = {
-//       id: user.id,
-//       username: formData.username,
-//       bio: formData.bio,
-   
-//     };
-
-//     const { error } = await supabase.from("profiles").upsert(updates);
-
-//     if (!error) {
-//       alert("Profile updated ✅");
-//       router.push("/");
-//     } else {
-//       console.error(error);
-//       alert("Something went wrong ❌");
-//       console.error("Supabase Error:", error);
-//       alert("Something went wrong ❌\n\n" + error.message);
-//     }
-//   };
-
-//   if (loading) {
-//     return <div className="p-6 text-center">Loading profile...</div>;
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-6 py-12">
-//       <img
-//         src={profile?.avatar_url || "/rascal-fallback.png"}
-//         alt="Profile"
-//         className="w-24 h-24 rounded-full border-4 border-pink-400 mb-4 object-cover"
-//       />
-//       <h1 className="text-3xl font-bold text-gray-800 mb-4">Your Profile</h1>
-
-//       <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-md">
-//         <label className="block text-sm font-medium text-gray-700 mb-1">
-//           Username
-//         </label>
-//         <input
-//           type="text"
-//           name="username"
-//           value={formData.username}
-//           onChange={handleChange}
-//           className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400"
-//         />
-
-//         <label className="block text-sm font-medium text-gray-700 mb-1">
-//           Bio
-//         </label>
-//         <textarea
-//           name="bio"
-//           rows={3}
-//           value={formData.bio}
-//           onChange={handleChange}
-//           className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400"
-//         />
-
-//         <button
-//           onClick={handleSave}
-//           className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-lg transition"
-//         >
-//           Save Changes
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
 
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
+import FindFriends from "../components/FindFriends.js"; // adjust path if needed
+
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
@@ -134,6 +15,7 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({ username: "", bio: "" });
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [showFindFriends, setShowFindFriends] = useState(false);
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -274,6 +156,13 @@ export default function ProfilePage() {
           className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400"
         />
         <button
+          onClick={() => setShowFindFriends(true)}
+          className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl transition"
+        >
+          🔍 Find Friends
+        </button>
+
+        <button
             onClick={() => router.push("/submit")}
             className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition"
             >
@@ -288,6 +177,12 @@ export default function ProfilePage() {
           Save Changes
         </button>
       </div>
+      {showFindFriends && (
+        <FindFriends
+          currentUser={user}
+          onClose={() => setShowFindFriends(false)}
+        />
+      )}
     </div>
   );
 }

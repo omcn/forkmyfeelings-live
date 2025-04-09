@@ -11,14 +11,28 @@ export default function AuthForm({ onAuthSuccess }) {
   const handleAuth = async (e) => {
     e.preventDefault();
     setError("");
-
+  
     const { data, error } = isLogin
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password });
-
-    if (error) setError(error.message);
-    else onAuthSuccess?.(data);
+  
+    if (error) {
+      setError(error.message);
+    } else {
+      // 🔥 Add this block after sign up to sync profile
+      if (!isLogin && data?.user) {
+        await supabase.from("profiles").upsert({
+          id: data.user.id,
+          email: data.user.email,
+          username: "",  // You could optionally ask for username at sign up
+          bio: "",
+        });
+      }
+  
+      onAuthSuccess?.(data);
+    }
   };
+  
 
   return (
     <form

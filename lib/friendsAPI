@@ -1,0 +1,65 @@
+// lib/friendsApi.js
+import { supabase } from "./supabaseClient";
+
+// Send a friend request
+export async function sendFriendRequest(senderId, receiverId) {
+  const { error } = await supabase.from("friends").insert({
+    user_id: senderId,
+    friend_id: receiverId,
+    status: "pending",
+  });
+  return error;
+}
+
+// Accept a friend request
+export async function acceptFriendRequest(senderId, receiverId) {
+  const { error } = await supabase
+    .from("friends")
+    .update({ status: "accepted" })
+    .match({ user_id: senderId, friend_id: receiverId });
+  return error;
+}
+
+// Get pending friend requests for a user
+export async function getPendingRequests(userId) {
+  const { data, error } = await supabase
+    .from("friends")
+    .select("*, user:user_id(email, user_metadata)")
+    .eq("friend_id", userId)
+    .eq("status", "pending");
+
+  return { data, error };
+}
+
+// Get list of accepted friends
+export async function getFriends(userId) {
+    const { data: sentData, error: err1 } = await supabase
+      .from("friends")
+      .select("friend_id")
+      .eq("user_id", userId)
+      .eq("status", "accepted");
+  
+    const { data: receivedData, error: err2 } = await supabase
+      .from("friends")
+      .select("user_id")
+      .eq("friend_id", userId)
+      .eq("status", "accepted");
+  
+    const sent = sentData ?? [];
+    const received = receivedData ?? [];
+  
+    const friendIds = [
+      ...sent.map((f) => f.friend_id),
+      ...received.map((f) => f.user_id),
+    ];
+  
+    if (friendIds.length === 0) return { data: [], error: null };
+  
+    const { data: friends, error: err3 } = await supabase
+      .from("users")
+      .select("id, email, user_metadata")
+      .in("id", friendIds);
+  
+    return { data: friends, error: err1 || err2 || err3 };
+  }
+  

@@ -95,6 +95,7 @@ export default function Home() {
   const [showPostCapture, setShowPostCapture]= useState(false);
   const [showFeed, setShowFeed] = useState(false);
   const [posts, setPosts] = useState([]);
+  const [showFindFriends, setShowFindFriends] = useState(false);
 
 
 
