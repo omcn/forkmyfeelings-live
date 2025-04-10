@@ -79,7 +79,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
-export default function FriendList({ profile, onClose }) {
+export default function FriendList({ currentUser, onClose }) {
+  const profile = currentUser; // 👈 rename for internal consistency
   const [friends, setFriends] = useState([]);
   const [rawData, setRawData] = useState(null);
   const [error, setError] = useState(null);
@@ -127,7 +128,7 @@ export default function FriendList({ profile, onClose }) {
         setFriends(formatted);
       } catch (err) {
         setError("Unexpected error fetching friends.");
-        console.error("❌ Fetch error:", err);
+        console.error("❌ FriendList fetch error:", err);
       } finally {
         setLoading(false);
       }
@@ -148,26 +149,26 @@ export default function FriendList({ profile, onClose }) {
         </button>
       </div>
 
-      {/* 🔍 Debug: Missing profile */}
+      {/* 🔍 Profile not available */}
       {!profile?.id && (
         <div className="text-center text-red-600 mb-4">
           ⚠️ Profile ID is missing — are you logged in?
         </div>
       )}
 
-      {/* 🔄 Loading state */}
+      {/* 🔄 Loading */}
       {loading && (
         <div className="text-center text-gray-500 mt-10">Loading friends...</div>
       )}
 
-      {/* ❌ Error state */}
+      {/* ❌ Error */}
       {error && (
         <div className="text-red-500 text-center mt-6">
           {error}
         </div>
       )}
 
-      {/* ℹ️ No friends state */}
+      {/* ℹ️ No friends */}
       {!loading && !error && friends.length === 0 && profile?.id && (
         <div className="text-center text-gray-500 mt-10">
           No friends yet.
@@ -193,7 +194,7 @@ export default function FriendList({ profile, onClose }) {
         </div>
       )}
 
-      {/* 🛠 Debug Output */}
+      {/* 🛠 Debug Info */}
       <div className="text-xs bg-gray-100 text-gray-800 mt-8 p-3 rounded shadow-inner max-h-64 overflow-y-auto">
         <strong>Debug Info:</strong>
         <ul className="list-disc list-inside mb-2">
