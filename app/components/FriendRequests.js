@@ -71,8 +71,12 @@ export default function FriendRequests({ currentUser }) {
   useEffect(() => {
     const fetchRequests = async () => {
       const { data, error } = await supabase
+        // .from("friends")
+        // .select("id, user_id, profiles:profiles!friends_user_id_fkey(username, avatar_url)")
+        // .eq("friend_id", currentUser.id)
+        // .eq("status", "pending");
         .from("friends")
-        .select("id, user_id, profiles:profiles!friends_user_id_fkey(username, avatar_url)")
+        .select("id, user_id, profile:fk_user_id(username, avatar_url)")
         .eq("friend_id", currentUser.id)
         .eq("status", "pending");
 
@@ -99,10 +103,10 @@ export default function FriendRequests({ currentUser }) {
         <div key={req.id} className="flex items-center justify-between p-3 border rounded-lg">
           <div className="flex items-center gap-3">
             <img
-              src={req.profiles?.avatar_url || "/rascal-fallback.png"}
+              src={req.profile?.avatar_url || "/rascal-fallback.png"}
               className="w-10 h-10 rounded-full object-cover"
             />
-            <span>{req.profiles?.username || "Unknown"}</span>
+            <span>{req.profile?.username || "Unknown"}</span>
           </div>
           <div className="flex gap-2">
             <button
