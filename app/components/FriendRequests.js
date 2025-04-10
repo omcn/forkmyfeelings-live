@@ -103,10 +103,10 @@ export default function FriendRequests({ currentUser }) {
         <div key={req.id} className="flex items-center justify-between p-3 border rounded-lg">
           <div className="flex items-center gap-3">
             <img
-              src={req.profile?.avatar_url || "/rascal-fallback.png"}
+              src={req.profiles?.avatar_url || "/rascal-fallback.png"}
               className="w-10 h-10 rounded-full object-cover"
             />
-            <span>{req.profile?.username || "Unknown"}</span>
+            <span>{req.profiles?.username || "Unknown"}</span>
           </div>
           <div className="flex gap-2">
             <button
