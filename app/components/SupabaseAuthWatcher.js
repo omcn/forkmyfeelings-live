@@ -53,16 +53,16 @@ export default function SupabaseAuthWatcher() {
             .from("profiles")
             .select("id")
             .eq("id", user.id)
-            .single();
+            .maybeSingle(); // ✅ this prevents throwing an error when no match
 
-          if (!existing && !error) {
+            if (!existing) {
             await supabase.from("profiles").insert({
-              id: user.id,
-              email: user.email ?? "", // fallback just in case
-              username: "",
-              bio: "",
+                id: user.id,
+                email: user.email ?? "",
+                username: "",
+                bio: "",
             });
-          }
+            }
         }
       }
     );
