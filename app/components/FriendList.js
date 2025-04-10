@@ -80,6 +80,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function FriendList({ profile, onClose }) {
+  const [rawData, setRawData] = useState(null);
   const [friends, setFriends] = useState([]);
   const [error, setError] = useState(null);
 
@@ -87,48 +88,56 @@ export default function FriendList({ profile, onClose }) {
     const fetchFriends = async () => {
       if (!profile?.id) return;
 
-      // Step 1: get all accepted friend rows
-      const { data: friendRelations, error: fetchError } = await supabase
-        .from("friends")
-        .select("*")
-        .or(`(user_id.eq.${profile.id},friend_id.eq.${profile.id})`)
-        .eq("status", "accepted");
+      try {
+        // Fetch friend relationships
+        const { data: relations, error: relationError } = await supabase
+          .from("friends")
+          .select("*")
+          .or(`(user_id.eq.${profile.id},friend_id.eq.${profile.id})`)
+          .eq("status", "accepted");
 
-      if (fetchError) {
-        console.error("❌ Failed to fetch friend relations:", fetchError.message);
-        setError("Failed to fetch friends.");
-        return;
+        if (relationError) {
+          setError("Failed to fetch friends.");
+          console.error("Friends query error:", relationError.message);
+          return;
+        }
+
+        setRawData(relations); // for debug
+
+        const otherIds = relations.map((r) =>
+          r.user_id === profile.id ? r.friend_id : r.user_id
+        );
+
+        // Guard: if otherIds are empty or contain undefined/null
+        const validIds = otherIds.filter((id) => !!id && typeof id === "string");
+
+        if (validIds.length === 0) {
+          setFriends([]);
+          return;
+        }
+
+        const { data: profiles, error: profileError } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url")
+          .in("id", validIds);
+
+        if (profileError) {
+          setError("Failed to fetch profiles.");
+          console.error("Profile fetch error:", profileError.message);
+          return;
+        }
+
+        const formatted = profiles.map((p) => ({
+          id: p.id,
+          username: p.username || "Unnamed",
+          avatar_url: p.avatar_url || "/rascal-fallback.png",
+        }));
+
+        setFriends(formatted);
+      } catch (err) {
+        console.error("General FriendList error:", err);
+        setError("Unexpected error loading friends.");
       }
-
-      if (!friendRelations || friendRelations.length === 0) {
-        setFriends([]);
-        return;
-      }
-
-      // Step 2: extract the other user’s ID
-      const otherUserIds = friendRelations.map(f =>
-        f.user_id === profile.id ? f.friend_id : f.user_id
-      );
-
-      // Step 3: fetch their profiles manually
-      const { data: profiles, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url")
-        .in("id", otherUserIds);
-
-      if (profileError) {
-        console.error("❌ Failed to fetch profile data:", profileError.message);
-        setError("Failed to fetch profile info.");
-        return;
-      }
-
-      const formatted = profiles.map((p) => ({
-        id: p.id,
-        username: p.username || "Unnamed",
-        avatar_url: p.avatar_url || "/rascal-fallback.png",
-      }));
-
-      setFriends(formatted);
     };
 
     fetchFriends();
@@ -142,10 +151,15 @@ export default function FriendList({ profile, onClose }) {
       </div>
 
       {error && (
-        <p className="text-red-500 text-center">{error}</p>
+        <div className="text-red-500 text-center mb-4">{error}</div>
       )}
 
-      {!error && friends.length === 0 ? (
+      <div className="text-xs bg-gray-100 p-2 rounded mb-4">
+        <strong>Raw friend rows:</strong>
+        <pre>{JSON.stringify(rawData, null, 2)}</pre>
+      </div>
+
+      {friends.length === 0 && !error ? (
         <p className="text-gray-500 text-center mt-10">No friends yet!</p>
       ) : (
         <div className="space-y-3">
