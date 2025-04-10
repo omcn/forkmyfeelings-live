@@ -88,8 +88,8 @@ export default function FriendList({ currentUser, onClose }) {
           id,
           user_id,
           friend_id,
-          fk_user_id: user_id (username, avatar_url),
-          fk_friend_id: friend_id (username, avatar_url)
+          fk_user: user_id (username, avatar_url),
+          fk_friend: friend_id (username, avatar_url)
         `)
         .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`)
         .eq("status", "accepted");
@@ -101,7 +101,7 @@ export default function FriendList({ currentUser, onClose }) {
 
       const formatted = data.map((f) => {
         const isSender = f.user_id === currentUser.id;
-        const otherProfile = isSender ? f.fk_friend_id : f.fk_user_id;
+        const otherProfile = isSender ? f.fk_friend : f.fk_user;
 
         return {
           id: f.id,
