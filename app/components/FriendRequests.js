@@ -76,7 +76,7 @@ export default function FriendRequests({ currentUser }) {
         // .eq("friend_id", currentUser.id)
         // .eq("status", "pending");
         .from("friends")
-        .select("id, user_id, fk_user(username, avatar_url)")
+        .select("id, user_id, fk_user_id(username, avatar_url)")
 
         .eq("friend_id", currentUser.id)
         .eq("status", "pending");
@@ -104,10 +104,10 @@ export default function FriendRequests({ currentUser }) {
         <div key={req.id} className="flex items-center justify-between p-3 border rounded-lg">
           <div className="flex items-center gap-3">
             <img
-              src={req.fk_user?.avatar_url || "/rascal-fallback.png"}
+              src={req.fk_user_id?.avatar_url || "/rascal-fallback.png"}
               className="w-10 h-10 rounded-full object-cover"
             />
-            <span>{req.fk_user?.username || "Unknown"}</span>
+            <span>{req.fk_user_id?.username || "Unknown"}</span>
           </div>
           <div className="flex gap-2">
             <button
