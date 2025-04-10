@@ -1,5 +1,7 @@
 
 
+
+
 // "use client";
 // import { useEffect, useState } from "react";
 // import { supabase } from "../../lib/supabaseClient";
@@ -15,10 +17,11 @@
 //           id,
 //           user_id,
 //           friend_id,
-//           user_profile:user_id (username, avatar_url),
-//           friend_profile:friend_id (username, avatar_url)
+//           fk_user: user_id (username, avatar_url),
+//           fk_friend: friend_id (username, avatar_url)
 //         `)
-//         .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`)
+//         .or(`(user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id})`)
+
 //         .eq("status", "accepted");
 
 //       if (error) {
@@ -26,10 +29,9 @@
 //         return;
 //       }
 
-//       // Pick the profile of the *other* person in each friendship
 //       const formatted = data.map((f) => {
 //         const isSender = f.user_id === currentUser.id;
-//         const otherProfile = isSender ? f.friend_profile : f.user_profile;
+//         const otherProfile = isSender ? f.fk_friend : f.fk_user;
 
 //         return {
 //           id: f.id,
@@ -41,9 +43,7 @@
 //       setFriends(formatted);
 //     };
 
-//     if (currentUser?.id) {
-//       fetchFriends();
-//     }
+//     if (currentUser?.id) fetchFriends();
 //   }, [currentUser]);
 
 //   return (
@@ -72,16 +72,17 @@
 //   );
 // }
 
-
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
-export default function FriendList({ currentUser, onClose }) {
+export default function FriendList({ profile, onClose }) {
   const [friends, setFriends] = useState([]);
 
   useEffect(() => {
     const fetchFriends = async () => {
+      if (!profile?.id) return;
+
       const { data, error } = await supabase
         .from("friends")
         .select(`
@@ -91,8 +92,7 @@ export default function FriendList({ currentUser, onClose }) {
           fk_user: user_id (username, avatar_url),
           fk_friend: friend_id (username, avatar_url)
         `)
-        .or(`(user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id})`)
-
+        .or(`(user_id.eq.${profile.id},friend_id.eq.${profile.id})`)
         .eq("status", "accepted");
 
       if (error) {
@@ -101,7 +101,7 @@ export default function FriendList({ currentUser, onClose }) {
       }
 
       const formatted = data.map((f) => {
-        const isSender = f.user_id === currentUser.id;
+        const isSender = f.user_id === profile.id;
         const otherProfile = isSender ? f.fk_friend : f.fk_user;
 
         return {
@@ -114,8 +114,8 @@ export default function FriendList({ currentUser, onClose }) {
       setFriends(formatted);
     };
 
-    if (currentUser?.id) fetchFriends();
-  }, [currentUser]);
+    fetchFriends();
+  }, [profile]);
 
   return (
     <div className="fixed inset-0 bg-white z-50 p-6 overflow-y-auto">
@@ -133,6 +133,7 @@ export default function FriendList({ currentUser, onClose }) {
               <img
                 src={f.avatar_url}
                 className="w-10 h-10 rounded-full object-cover"
+                alt="Friend avatar"
               />
               <span>{f.username}</span>
             </div>
@@ -142,3 +143,4 @@ export default function FriendList({ currentUser, onClose }) {
     </div>
   );
 }
+

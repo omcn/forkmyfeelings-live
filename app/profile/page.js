@@ -502,8 +502,11 @@ export default function ProfilePage() {
         <FindFriends currentUser={profile} onClose={() => setShowFindFriends(false)} />
       )}
 
-      {showFriends && (
+      {/* {showFriends && (
         <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
+      )} */}
+      {showFriends && (
+        <FriendList profile={profile} onClose={() => setShowFriends(false)} />
       )}
 
       {showRequests && profile && (
