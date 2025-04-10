@@ -90,12 +90,11 @@ export default function FriendList({ profile, onClose }) {
 
       try {
         // Fetch friend relationships
-        const { data: friendRelations, error: fetchError } = await supabase
+        const { data, error } = await supabase
         .from("friends")
         .select("*")
         .eq("status", "accepted")
-        .in("user_id", [profile.id]) // try one direction only
-
+        .eq("user_id", "01575dd0-e5e0-45f6-83f6-1688250c3d84"); // 👈 hardcoded
 
         if (relationError) {
           setError("Failed to fetch friends.");
