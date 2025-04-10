@@ -304,33 +304,8 @@ export default function ProfilePage() {
     if (!error) setIncomingCount(data.length);
   };
 
-  // useEffect(() => {
-  //   const fetchUserAndProfile = async () => {
-  //     const { data: authData } = await supabase.auth.getUser();
-  //     const user = authData?.user;
-  //     setUser(user);
-
-  //     if (user) {
-  //       const { data, error } = await supabase
-  //         .from("profiles")
-  //         .select("*")
-  //         .eq("id", user.id)
-  //         .single();
-
-  //       if (!error && data) {
-  //         setProfile(data);
-  //         setFormData({
-  //           username: data.username || "",
-  //           bio: data.bio || "",
-  //         });
-  //       }
-  //     }
-
-  //     setLoading(false);
-  //   };
-
-  //   fetchUserAndProfile();
-  // }, []);
+  
+  
   useEffect(() => {
     const getProfile = async () => {
       const {
@@ -377,7 +352,10 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const updates = {
       id: user.id,
