@@ -81,42 +81,56 @@ import { supabase } from "../../lib/supabaseClient";
 
 export default function FriendList({ profile, onClose }) {
   const [friends, setFriends] = useState([]);
+  const [rawData, setRawData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFriends = async () => {
-      if (!profile?.id) return;
-
-      const { data, error } = await supabase
-        .from("friends")
-        .select(`
-          id,
-          user_id,
-          friend_id,
-          user: user_id (username, avatar_url),
-          friend: friend_id (username, avatar_url)
-        `)
-        .or(`user_id.eq.${profile.id},friend_id.eq.${profile.id}`)
-        .eq("status", "accepted");
-
-      if (error) {
-        console.error("❌ Failed to fetch friends:", error.message);
+      if (!profile?.id) {
+        setLoading(false);
         return;
       }
 
-      console.log("✅ Friend data:", data);
+      try {
+        const { data, error } = await supabase
+          .from("friends")
+          .select(`
+            id,
+            user_id,
+            friend_id,
+            user: user_id (username, avatar_url),
+            friend: friend_id (username, avatar_url)
+          `)
+          .eq("status", "accepted")
+          .or(`user_id.eq.${profile.id},friend_id.eq.${profile.id}`);
 
-      const formatted = data.map((f) => {
-        const isSender = f.user_id === profile.id;
-        const otherProfile = isSender ? f.friend : f.user;
+        if (error) {
+          setError("Failed to fetch friends: " + error.message);
+          setLoading(false);
+          return;
+        }
 
-        return {
-          id: f.id,
-          username: otherProfile?.username || "Unnamed",
-          avatar_url: otherProfile?.avatar_url || "/rascal-fallback.png",
-        };
-      });
+        setRawData(data);
 
-      setFriends(formatted);
+        const formatted = data.map((f) => {
+          const isSender = f.user_id === profile.id;
+          const otherProfile = isSender ? f.friend : f.user;
+
+          return {
+            id: f.id,
+            username: otherProfile?.username || "Unnamed",
+            avatar_url: otherProfile?.avatar_url || "/rascal-fallback.png",
+          };
+        });
+
+        setFriends(formatted);
+      } catch (err) {
+        setError("Unexpected error fetching friends.");
+        console.error("❌ Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchFriends();
@@ -134,10 +148,35 @@ export default function FriendList({ profile, onClose }) {
         </button>
       </div>
 
-      {friends.length === 0 ? (
-        <p className="text-gray-500 text-center mt-10">No friends yet!</p>
-      ) : (
-        <div className="space-y-3">
+      {/* 🔍 Debug: Missing profile */}
+      {!profile?.id && (
+        <div className="text-center text-red-600 mb-4">
+          ⚠️ Profile ID is missing — are you logged in?
+        </div>
+      )}
+
+      {/* 🔄 Loading state */}
+      {loading && (
+        <div className="text-center text-gray-500 mt-10">Loading friends...</div>
+      )}
+
+      {/* ❌ Error state */}
+      {error && (
+        <div className="text-red-500 text-center mt-6">
+          {error}
+        </div>
+      )}
+
+      {/* ℹ️ No friends state */}
+      {!loading && !error && friends.length === 0 && profile?.id && (
+        <div className="text-center text-gray-500 mt-10">
+          No friends yet.
+        </div>
+      )}
+
+      {/* ✅ Friend List */}
+      {!loading && friends.length > 0 && (
+        <div className="space-y-3 mt-4">
           {friends.map((f) => (
             <div
               key={f.id}
@@ -153,6 +192,19 @@ export default function FriendList({ profile, onClose }) {
           ))}
         </div>
       )}
+
+      {/* 🛠 Debug Output */}
+      <div className="text-xs bg-gray-100 text-gray-800 mt-8 p-3 rounded shadow-inner max-h-64 overflow-y-auto">
+        <strong>Debug Info:</strong>
+        <ul className="list-disc list-inside mb-2">
+          <li>Profile ID: <code>{profile?.id || "undefined"}</code></li>
+          <li>Total Friends: {friends.length}</li>
+        </ul>
+        <details>
+          <summary className="cursor-pointer text-blue-600 mb-2">Raw Supabase Data</summary>
+          <pre className="whitespace-pre-wrap break-words">{JSON.stringify(rawData, null, 2)}</pre>
+        </details>
+      </div>
     </div>
   );
 }
