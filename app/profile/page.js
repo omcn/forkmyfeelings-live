@@ -67,7 +67,7 @@ export default function ProfilePage() {
       const { data, error } = await supabase
         .from("friends")
         .select("*")
-        .eq("friend_id", user.id)
+        .eq("friend_id", currentUser.id)
         .eq("status", "pending");
     
       if (!error) setIncomingCount(data.length);
