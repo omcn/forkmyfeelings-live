@@ -91,7 +91,8 @@ export default function FriendList({ currentUser, onClose }) {
           fk_user: user_id (username, avatar_url),
           fk_friend: friend_id (username, avatar_url)
         `)
-        .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`)
+        .or(`(user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id})`)
+
         .eq("status", "accepted");
 
       if (error) {
