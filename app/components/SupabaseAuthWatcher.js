@@ -41,9 +41,13 @@ import { supabase } from "../../lib/supabaseClient";
 export default function SupabaseAuthWatcher() {
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" && session?.user) {
-          const user = session.user;
+      async (event) => {
+        if (event === "SIGNED_IN") {
+          // ✅ Force a fresh session grab (to get user.email reliably)
+          const { data: sessionData } = await supabase.auth.getSession();
+          const user = sessionData.session?.user;
+
+          if (!user) return;
 
           const { data: existing, error } = await supabase
             .from("profiles")
@@ -54,7 +58,7 @@ export default function SupabaseAuthWatcher() {
           if (!existing && !error) {
             await supabase.from("profiles").insert({
               id: user.id,
-              email: user.email,
+              email: user.email ?? "", // fallback just in case
               username: "",
               bio: "",
             });
