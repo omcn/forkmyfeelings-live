@@ -28,7 +28,7 @@ export default function ProfilePage() {
   const refreshIncomingRequests = async () => {
     if (!user) return;
     const { data, error } = await supabase
-      .from("friendships")
+      .from("friends")
       .select("*")
       .eq("friend_id", user.id)
       .eq("status", "pending");
@@ -65,7 +65,7 @@ export default function ProfilePage() {
     const fetchIncomingRequests = async () => {
       if (!user) return;
       const { data, error } = await supabase
-        .from("friendships")
+        .from("friends")
         .select("*")
         .eq("friend_id", user.id)
         .eq("status", "pending");
