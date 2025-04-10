@@ -37,7 +37,7 @@
 
 import "./globals.css";
 import { Inter } from "next/font/google";
-import SupabaseAuthWatcher from "../components/SupabaseAuthWatcher"; // ✅ Adjust path if needed
+import SupabaseAuthWatcher from "./components/SupabaseAuthWatcher";
 
 const inter = Inter({ subsets: ["latin"] });
 
