@@ -304,33 +304,64 @@ export default function ProfilePage() {
     if (!error) setIncomingCount(data.length);
   };
 
+  // useEffect(() => {
+  //   const fetchUserAndProfile = async () => {
+  //     const { data: authData } = await supabase.auth.getUser();
+  //     const user = authData?.user;
+  //     setUser(user);
+
+  //     if (user) {
+  //       const { data, error } = await supabase
+  //         .from("profiles")
+  //         .select("*")
+  //         .eq("id", user.id)
+  //         .single();
+
+  //       if (!error && data) {
+  //         setProfile(data);
+  //         setFormData({
+  //           username: data.username || "",
+  //           bio: data.bio || "",
+  //         });
+  //       }
+  //     }
+
+  //     setLoading(false);
+  //   };
+
+  //   fetchUserAndProfile();
+  // }, []);
   useEffect(() => {
-    const fetchUserAndProfile = async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
+    const getProfile = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+  
+      const user = session?.user;
+      if (!user) return;
+  
       setUser(user);
-
-      if (user) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (!error && data) {
-          setProfile(data);
-          setFormData({
-            username: data.username || "",
-            bio: data.bio || "",
-          });
-        }
+  
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+  
+      if (!error) {
+        setProfile(profile);
+        setFormData({
+          username: profile.username || "",
+          bio: profile.bio || "",
+        });
       }
-
+  
       setLoading(false);
     };
-
-    fetchUserAndProfile();
+  
+    getProfile();
   }, []);
+  
 
   useEffect(() => {
     if (profile) {

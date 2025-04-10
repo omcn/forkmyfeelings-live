@@ -141,40 +141,107 @@ export default function Home() {
   
   
 
+  // useEffect(() => {
+  //   const getUser = async () => {
+  //     // const { data, error } = await supabase.auth.getUser();
+  //     // if (data?.user) setUser(data.user);
+  //     const { data: { session } } = await supabase.auth.getSession();
+  //     if (session?.user) setUser(session.user);
+
+  //   };
+
+  //   if (recipe) {
+  //     setMoodRating(null); // reset stars on new recipe
+  //   }
+
+  //   const loadPosts = async () => {
+  //     const today = new Date().toISOString().slice(0, 10);
+  //     const { data, error } = await supabase
+  //       .from("recipe_posts")
+  //       .select("*")
+  //       .gte("created_at", today)
+  //       .order("created_at", { ascending: false });
+  
+  //     if (!error) setPosts(data);
+  //   };
+  //   loadPosts();
+
+    
+  //   const fetchRecipes = async () => {
+  //     const { data, error } = await supabase.from("recipes").select("*");
+  //     if (error) {
+  //       console.error("Error fetching recipes:", error.message);
+  //     } else {
+  //       const formatted = {};
+  //       data.forEach((recipe) => {
+  //         const moods = typeof recipe.moods === "string"
+  //           ? JSON.parse(recipe.moods)
+  //           : recipe.moods;
+
+  //         moods.forEach((mood) => {
+  //           if (!formatted[mood]) {
+  //             formatted[mood] = [];
+  //           }
+  //           formatted[mood].push(recipe);
+  //         });
+  //       });
+
+  //       setRecipes(formatted);
+  //       console.log("Formatted recipes by mood:", formatted); // debug
+  //     }
+  //   };
+    
+
+  //   getUser();
+  //   setTimeout(() => setReadyToShowMoods(true), 300); // 300ms animation prep
+  //   fetchRecipes();
+
+  //   const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+  //     if (event === "SIGNED_IN") setUser(session.user);
+  //     if (event === "SIGNED_OUT") setUser(null);
+  //   });
+
+    
+    
+
+  //   return () => {
+  //     listener?.subscription.unsubscribe();
+  //   };
+  // }, []);
+
   useEffect(() => {
-    const getUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data?.user) setUser(data.user);
-    };
-
-    if (recipe) {
-      setMoodRating(null); // reset stars on new recipe
-    }
-
-    const loadPosts = async () => {
+    let listener;
+  
+    const initApp = async () => {
+      // 1. Get session safely
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user;
+      setUser(currentUser);
+  
+      // 2. Load today's posts
       const today = new Date().toISOString().slice(0, 10);
-      const { data, error } = await supabase
+      const { data: postData, error: postError } = await supabase
         .from("recipe_posts")
         .select("*")
         .gte("created_at", today)
         .order("created_at", { ascending: false });
   
-      if (!error) setPosts(data);
-    };
-    loadPosts();
-
-    
-    const fetchRecipes = async () => {
-      const { data, error } = await supabase.from("recipes").select("*");
-      if (error) {
-        console.error("Error fetching recipes:", error.message);
-      } else {
+      if (!postError) {
+        setPosts(postData);
+      }
+  
+      // 3. Load recipes and group by moods
+      const { data: recipeData, error: recipeError } = await supabase
+        .from("recipes")
+        .select("*");
+  
+      if (!recipeError) {
         const formatted = {};
-        data.forEach((recipe) => {
+        recipeData.forEach((recipe) => {
           const moods = typeof recipe.moods === "string"
             ? JSON.parse(recipe.moods)
             : recipe.moods;
-
+  
           moods.forEach((mood) => {
             if (!formatted[mood]) {
               formatted[mood] = [];
@@ -182,29 +249,26 @@ export default function Home() {
             formatted[mood].push(recipe);
           });
         });
-
         setRecipes(formatted);
-        console.log("Formatted recipes by mood:", formatted); // debug
       }
+  
+      // 4. Animate mood buttons after a short delay
+      setTimeout(() => setReadyToShowMoods(true), 300);
     };
-    
-
-    getUser();
-    setTimeout(() => setReadyToShowMoods(true), 300); // 300ms animation prep
-    fetchRecipes();
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+  
+    initApp();
+  
+    // 5. Auth state change listener
+    listener = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN") setUser(session.user);
       if (event === "SIGNED_OUT") setUser(null);
     });
-
-    
-    
-
+  
     return () => {
-      listener?.subscription.unsubscribe();
+      listener?.subscription?.unsubscribe();
     };
   }, []);
+  
 
   // const handleMultiMoodSubmit = () => {
   //   if (selectedMoods.length === 0) return;
