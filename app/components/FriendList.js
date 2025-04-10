@@ -1,4 +1,5 @@
 
+
 // "use client";
 // import { useEffect, useState } from "react";
 // import { supabase } from "../../lib/supabaseClient";
@@ -22,23 +23,27 @@
 
 //       if (error) {
 //         console.error("❌ Failed to fetch friends:", error.message);
-//       } else {
-//         // Filter to only the other person's profile
-//         const formatted = data.map((f) => {
-//           const isSender = f.user_id === currentUser.id;
-//           const otherProfile = isSender ? f.friend_profile : f.user_profile;
-//           return {
-//             id: f.id,
-//             username: otherProfile?.username || "Unnamed",
-//             avatar_url: otherProfile?.avatar_url || "/rascal-fallback.png",
-//           };
-//         });
-
-//         setFriends(formatted);
+//         return;
 //       }
+
+//       // Pick the profile of the *other* person in each friendship
+//       const formatted = data.map((f) => {
+//         const isSender = f.user_id === currentUser.id;
+//         const otherProfile = isSender ? f.friend_profile : f.user_profile;
+
+//         return {
+//           id: f.id,
+//           username: otherProfile?.username || "Unnamed",
+//           avatar_url: otherProfile?.avatar_url || "/rascal-fallback.png",
+//         };
+//       });
+
+//       setFriends(formatted);
 //     };
 
-//     fetchFriends();
+//     if (currentUser?.id) {
+//       fetchFriends();
+//     }
 //   }, [currentUser]);
 
 //   return (
@@ -67,6 +72,7 @@
 //   );
 // }
 
+
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
@@ -82,8 +88,8 @@ export default function FriendList({ currentUser, onClose }) {
           id,
           user_id,
           friend_id,
-          user_profile:user_id (username, avatar_url),
-          friend_profile:friend_id (username, avatar_url)
+          fk_user_id: user_id (username, avatar_url),
+          fk_friend_id: friend_id (username, avatar_url)
         `)
         .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`)
         .eq("status", "accepted");
@@ -93,10 +99,9 @@ export default function FriendList({ currentUser, onClose }) {
         return;
       }
 
-      // Pick the profile of the *other* person in each friendship
       const formatted = data.map((f) => {
         const isSender = f.user_id === currentUser.id;
-        const otherProfile = isSender ? f.friend_profile : f.user_profile;
+        const otherProfile = isSender ? f.fk_friend_id : f.fk_user_id;
 
         return {
           id: f.id,
@@ -108,9 +113,7 @@ export default function FriendList({ currentUser, onClose }) {
       setFriends(formatted);
     };
 
-    if (currentUser?.id) {
-      fetchFriends();
-    }
+    if (currentUser?.id) fetchFriends();
   }, [currentUser]);
 
   return (
