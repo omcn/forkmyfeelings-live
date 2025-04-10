@@ -309,11 +309,16 @@ export default function ProfilePage() {
   useEffect(() => {
     const getProfile = async () => {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-  
-      const user = session?.user;
-      if (!user) return;
+        data: { user },
+        error: userError
+      } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.warn("❌ No user found:", userError);
+        setLoading(false);
+        return;
+      }
+      
   
       setUser(user);
   
