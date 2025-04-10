@@ -120,8 +120,8 @@ export default function FriendList({ currentUser, onClose }) {
 
           return {
             id: f.id,
-            username: otherProfile?.username || "Unnamed",
-            avatar_url: otherProfile?.avatar_url || "/rascal-fallback.png",
+            username: otherProfile?.username || "Unnamed", // Fallback to "Unnamed"
+            avatar_url: otherProfile?.avatar_url || "/rascal-fallback.png", // Fallback to default avatar
           };
         });
 
