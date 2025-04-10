@@ -76,7 +76,7 @@ export default function FriendRequests({ currentUser }) {
         // .eq("friend_id", currentUser.id)
         // .eq("status", "pending");
         .from("friends")
-        .select("id, user_id, profile:fk_user_id(username, avatar_url)")
+        .select("id, user_id, profiles(username, avatar_url)")
         .eq("friend_id", currentUser.id)
         .eq("status", "pending");
 
