@@ -67,7 +67,7 @@ export default function ProfilePage() {
       const { data, error } = await supabase
         .from("friends")
         .select("*")
-        .eq("friend_id", currentUser.id)
+        .eq("friend_id", profile.id)
         .eq("status", "pending");
     
       if (!error) setIncomingCount(data.length);
@@ -260,7 +260,7 @@ export default function ProfilePage() {
             {incomingCount === 0 ? (
               <p className="text-center text-gray-500">No new requests</p>
             ) : (
-              <FriendRequests currentUser={user} onClose={() => {
+              <FriendRequests currentUser={profile} onClose={() => {
                 setShowRequests(false);
                 refreshIncomingRequests(); // ✅ refresh on close
               }} />
