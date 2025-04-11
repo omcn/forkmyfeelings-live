@@ -778,7 +778,6 @@ export default function ProfilePage() {
         </button>
         <button
           onClick={() => {
-            setShowFriends(false);
             setShowRequests(true);
           }}
           className="relative mt-4 bg-yellow-300 hover:bg-yellow-400 text-yellow-900 font-semibold py-2 px-4 rounded-xl transition"
@@ -792,7 +791,6 @@ export default function ProfilePage() {
         </button>
         <button
           onClick={() => {
-            setShowRequests(false);
             setShowFriends(true);
           }}
           className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-xl transition"
