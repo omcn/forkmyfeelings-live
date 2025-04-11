@@ -136,18 +136,19 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function FriendList({ currentUser, onClose }) {
-  const profile = currentUser;
+  const profile = currentUser; // alias for internal consistency
   const [friends, setFriends] = useState([]);
+  const [rawData, setRawData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!profile?.id) {
-      setLoading(false);
-      return;
-    }
-
     const fetchFriends = async () => {
+      if (!profile?.id) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from("friends")
@@ -155,10 +156,10 @@ export default function FriendList({ currentUser, onClose }) {
             id,
             user_id,
             friend_id,
-            friend: fk_friend_id (username, avatar_url)
+            fk_user_id(username, avatar_url)   // Adjust alias to match FriendRequests
           `)
-          .eq("user_id", profile.id)
-          .eq("status", "accepted");
+          .eq("status", "accepted")
+          .or(`user_id.eq.${profile.id},friend_id.eq.${profile.id}`);
 
         if (error) {
           setError("Failed to fetch friends: " + error.message);
@@ -166,15 +167,23 @@ export default function FriendList({ currentUser, onClose }) {
           return;
         }
 
-        const formatted = data.map((f) => ({
-          id: f.id,
-          username: f.friend?.username || "Unnamed",
-          avatar_url: f.friend?.avatar_url || "/rascal-fallback.png",
-        }));
+        setRawData(data);
+
+        const formatted = data.map((f) => {
+          const isSender = f.user_id === profile.id;
+          const otherProfile = isSender ? f.friend : f.fk_user_id;  // Access fk_user_id for profile
+
+          return {
+            id: f.id,
+            username: otherProfile?.username || "Unnamed", // Fallback to "Unnamed"
+            avatar_url: otherProfile?.avatar_url || "/rascal-fallback.png", // Fallback to default avatar
+          };
+        });
 
         setFriends(formatted);
       } catch (err) {
         setError("Unexpected error fetching friends.");
+        console.error("❌ FriendList fetch error:", err);
       } finally {
         setLoading(false);
       }
@@ -187,33 +196,48 @@ export default function FriendList({ currentUser, onClose }) {
     <div className="fixed inset-0 bg-white z-50 p-6 overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-bold">👥 Your Friends</h2>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">
+        <button
+          onClick={onClose}
+          className="text-gray-500 hover:text-gray-700 text-xl"
+        >
           ✕
         </button>
       </div>
 
-      {loading && (
-        <div className="text-center text-gray-500 mt-10">Loading friends...</div>
-      )}
-
-      {!loading && (!profile || !profile.id) && (
+      {/* Profile not available */}
+      {!profile?.id && (
         <div className="text-center text-red-600 mb-4">
           ⚠️ Profile ID is missing — are you logged in?
         </div>
       )}
 
-      {!loading && error && (
-        <div className="text-red-500 text-center mt-6">{error}</div>
+      {/* Loading */}
+      {loading && (
+        <div className="text-center text-gray-500 mt-10">Loading friends...</div>
       )}
 
-      {!loading && profile?.id && friends.length === 0 && (
-        <div className="text-center text-gray-500 mt-10">No friends yet.</div>
+      {/* Error */}
+      {error && (
+        <div className="text-red-500 text-center mt-6">
+          {error}
+        </div>
       )}
 
-      {!loading && profile?.id && friends.length > 0 && (
+      {/* No friends */}
+      {!loading && !error && friends.length === 0 && profile?.id && (
+        <div className="text-center text-gray-500 mt-10">
+          No friends yet.
+        </div>
+      )}
+
+      {/* Friend List */}
+      {!loading && friends.length > 0 && (
         <div className="space-y-3 mt-4">
           {friends.map((f) => (
-            <div key={f.id} className="flex items-center gap-3 border rounded-lg p-3">
+            <div
+              key={f.id}
+              className="flex items-center gap-3 border rounded-lg p-3"
+            >
               <img
                 src={f.avatar_url}
                 className="w-10 h-10 rounded-full object-cover"
@@ -224,7 +248,8 @@ export default function FriendList({ currentUser, onClose }) {
           ))}
         </div>
       )}
+
+      {/* Debug Info removed */}
     </div>
   );
 }
-
