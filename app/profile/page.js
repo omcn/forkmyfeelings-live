@@ -599,52 +599,95 @@ export default function ProfilePage() {
     }
   };
 
-  useEffect(() => {
-    const getProfile = async () => {
-      try {
-        // Get the authenticated user
-        const { data } = await supabase.auth.getUser();
-        const currentUser = data?.user;
-        if (!currentUser) {
-          setErrorMessage("No user found. Please log in.");
-          return;
-        }
-        setUser(currentUser);
+  // useEffect(() => {
+  //   const getProfile = async () => {
+  //     try {
+  //       // Get the authenticated user
+  //       const { data } = await supabase.auth.getUser();
+  //       const currentUser = data?.user;
+  //       if (!currentUser) {
+  //         setErrorMessage("No user found. Please log in.");
+  //         return;
+  //       }
+  //       setUser(currentUser);
 
-        // Fetch profile from the "profiles" table.
+  //       // Fetch profile from the "profiles" table.
+  //       const { data: profileData, error: profileError } = await supabase
+  //         .from("profiles")
+  //         .select("*")
+  //         .eq("id", currentUser.id)
+  //         .single();
+  //       if (profileError || !profileData) {
+  //         setErrorMessage("Error fetching profile.");
+  //         return;
+  //       }
+  //       setProfile(profileData);
+  //       setFormData({
+  //         username: profileData.username || "",
+  //         bio: profileData.bio || "",
+  //       });
+  //     } catch {
+  //       setErrorMessage("Unexpected error fetching profile.");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   getProfile();
+
+  //   // Fallback: if getProfile is still loading after 15 seconds, clear loading to unblock the UI.
+  //   const timeout = setTimeout(() => {
+  //     setLoading(false);
+  //     if (!user || !profile) {
+  //       setErrorMessage("Request timed out. Please try again later.");
+  //     }
+  //   }, 60000);
+
+  //   return () => clearTimeout(timeout);
+  // }, []);
+
+  useEffect(() => {
+    const loadUserAndProfile = async () => {
+      setLoading(true);
+      setErrorMessage("");
+  
+      try {
+        const {
+          data: { user: currentUser },
+          error: userError,
+        } = await supabase.auth.getUser();
+  
+        if (userError || !currentUser) {
+          throw new Error("Could not load user. Are you logged in?");
+        }
+  
+        setUser(currentUser);
+  
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", currentUser.id)
           .single();
+  
         if (profileError || !profileData) {
-          setErrorMessage("Error fetching profile.");
-          return;
+          throw new Error("Profile not found for this user.");
         }
+  
         setProfile(profileData);
         setFormData({
           username: profileData.username || "",
           bio: profileData.bio || "",
         });
-      } catch {
-        setErrorMessage("Unexpected error fetching profile.");
+      } catch (err) {
+        setErrorMessage(err.message || "Something went wrong.");
       } finally {
         setLoading(false);
       }
     };
-
-    getProfile();
-
-    // Fallback: if getProfile is still loading after 15 seconds, clear loading to unblock the UI.
-    const timeout = setTimeout(() => {
-      setLoading(false);
-      if (!user || !profile) {
-        setErrorMessage("Request timed out. Please try again later.");
-      }
-    }, 60000);
-
-    return () => clearTimeout(timeout);
+  
+    loadUserAndProfile();
   }, []);
+  
 
   useEffect(() => {
     if (profile) {
