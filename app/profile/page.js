@@ -647,30 +647,30 @@ export default function ProfilePage() {
   // }, []);
 
   useEffect(() => {
-    const loadUserAndProfile = async () => {
+    let timeout;
+  
+    const fetchProfile = async () => {
       setLoading(true);
       setErrorMessage("");
   
       try {
-        const {
-          data: { user: currentUser },
-          error: userError,
-        } = await supabase.auth.getUser();
-  
-        if (userError || !currentUser) {
-          throw new Error("Could not load user. Are you logged in?");
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          setErrorMessage("⚠️ Failed to retrieve user. Please log in again.");
+          return;
         }
   
-        setUser(currentUser);
+        setUser(user);
   
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", currentUser.id)
+          .eq("id", user.id)
           .single();
   
         if (profileError || !profileData) {
-          throw new Error("Profile not found for this user.");
+          setErrorMessage("⚠️ Could not fetch your profile data.");
+          return;
         }
   
         setProfile(profileData);
@@ -679,14 +679,25 @@ export default function ProfilePage() {
           bio: profileData.bio || "",
         });
       } catch (err) {
-        setErrorMessage(err.message || "Something went wrong.");
+        console.error("❌ Unexpected error:", err);
+        setErrorMessage("Unexpected error. Try again later.");
       } finally {
         setLoading(false);
       }
     };
   
-    loadUserAndProfile();
+    fetchProfile();
+  
+    timeout = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+        setErrorMessage("⏱️ Request timed out. Try refreshing.");
+      }
+    }, 15000);
+  
+    return () => clearTimeout(timeout);
   }, []);
+  
   
 
   useEffect(() => {
