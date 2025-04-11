@@ -391,7 +391,6 @@ export default function ProfilePage() {
       return;
     }
 
-    // Get the public URL for the uploaded avatar
     const { data: publicData } = supabase.storage
       .from("avatars")
       .getPublicUrl(filePath);
@@ -468,13 +467,21 @@ export default function ProfilePage() {
         />
 
         <button
-          onClick={() => setShowFindFriends(true)}
+          onClick={() => {
+            setShowFriends(false);
+            setShowRequests(false);
+            setShowFindFriends(true);
+          }}
           className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl transition"
         >
           🔍 Find Friends
         </button>
         <button
-          onClick={() => setShowRequests(true)}
+          onClick={() => {
+            setShowFriends(false);
+            setShowFindFriends(false);
+            setShowRequests(true);
+          }}
           className="relative mt-4 bg-yellow-300 hover:bg-yellow-400 text-yellow-900 font-semibold py-2 px-4 rounded-xl transition"
         >
           👥 Requests
@@ -485,7 +492,11 @@ export default function ProfilePage() {
           )}
         </button>
         <button
-          onClick={() => setShowFriends(true)}
+          onClick={() => {
+            setShowFindFriends(false);
+            setShowRequests(false);
+            setShowFriends(true);
+          }}
           className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-xl transition"
         >
           🧑‍🤝‍🧑 My Friends
