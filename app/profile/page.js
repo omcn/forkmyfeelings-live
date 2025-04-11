@@ -34,44 +34,43 @@ export default function ProfilePage() {
     if (!error) setIncomingCount(data.length);
   };
 
-  
-  
   useEffect(() => {
     const getProfile = async () => {
-      const {
-        data: { user },
-        error: userError
-      } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        console.warn("❌ No user found:", userError);
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          console.warn("❌ No user found:", userError);
+          return;
+        }
+
+        setUser(user);
+
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (!profileError && profileData) {
+          setProfile(profileData);
+          setFormData({
+            username: profileData.username || "",
+            bio: profileData.bio || "",
+          });
+        }
+      } catch (err) {
+        console.error("❌ Error in getProfile:", err);
+      } finally {
         setLoading(false);
-        return;
       }
-      
-  
-      setUser(user);
-  
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-  
-      if (!error) {
-        setProfile(profile);
-        setFormData({
-          username: profile.username || "",
-          bio: profile.bio || "",
-        });
-      }
-  
-      setLoading(false);
     };
-  
+
     getProfile();
   }, []);
-  
 
   useEffect(() => {
     if (profile) {
@@ -203,7 +202,11 @@ export default function ProfilePage() {
           🔍 Find Friends
         </button>
         <button
-          onClick={() => setShowRequests(true)}
+          onClick={() => {
+            /* Hide friends when showing requests */
+            setShowFriends(false);
+            setShowRequests(true);
+          }}
           className="relative mt-4 bg-yellow-300 hover:bg-yellow-400 text-yellow-900 font-semibold py-2 px-4 rounded-xl transition"
         >
           👥 Requests
@@ -214,7 +217,11 @@ export default function ProfilePage() {
           )}
         </button>
         <button
-          onClick={() => setShowFriends(true)}
+          onClick={() => {
+            /* Hide requests when showing friends */
+            setShowRequests(false);
+            setShowFriends(true);
+          }}
           className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-xl transition"
         >
           🧑‍🤝‍🧑 My Friends
@@ -234,15 +241,17 @@ export default function ProfilePage() {
       </div>
 
       {showFindFriends && (
-        <FindFriends currentUser={profile} onClose={() => setShowFindFriends(false)} />
+        <FindFriends
+          currentUser={profile}
+          onClose={() => setShowFindFriends(false)}
+        />
       )}
 
-      {/* {showFriends && (
-        <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
-      )} */}
       {showFriends && (
-        // <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
-        <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
+        <FriendList
+          currentUser={profile}
+          onClose={() => setShowFriends(false)}
+        />
       )}
 
       {showRequests && profile && (
@@ -272,6 +281,7 @@ export default function ProfilePage() {
     </div>
   );
 }
+
 // "use client";
 // import { useEffect, useState } from "react";
 // import { useRouter } from "next/navigation";
