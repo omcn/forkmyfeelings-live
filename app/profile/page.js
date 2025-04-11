@@ -327,38 +327,102 @@ export default function ProfilePage() {
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchProfile = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) throw new Error("User not found");
-        if (!isMounted) return;
-        setUser(user);
+  // useEffect(() => {
+  //   let isMounted = true;
+  //   const fetchProfile = async () => {
+  //     try {
+  //       const { data: { user }, error: userError } = await supabase.auth.getUser();
+  //       if (userError || !user) throw new Error("User not found");
+  //       if (!isMounted) return;
+  //       setUser(user);
 
+  //       const { data: profileData, error: profileError } = await supabase
+  //         .from("profiles")
+  //         .select("*")
+  //         .eq("id", user.id)
+  //         .single();
+
+  //       if (profileError || !profileData) throw new Error("Profile not found");
+  //       if (!isMounted) return;
+  //       setProfile(profileData);
+  //       setFormData({ username: profileData.username || "", bio: profileData.bio || "" });
+  //     } catch (err) {
+  //       if (isMounted) {
+  //         console.error("Profile load error:", err.message);
+  //         setErrorMessage("Something went wrong loading your profile.");
+  //       }
+  //     } finally {
+  //       if (isMounted) setLoading(false);
+  //     }
+  //   };
+
+  //   fetchProfile();
+  //   return () => { isMounted = false; };
+  // }, []);
+  useEffect(() => {
+    let timeout;
+    let isMounted = true;
+  
+    const fetchProfile = async () => {
+      setLoading(true);
+      setErrorMessage("");
+  
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        const user = sessionData?.session?.user;
+  
+        if (sessionError || !user) {
+          if (isMounted) {
+            setErrorMessage("⚠️ Failed to retrieve user. Please log in again.");
+          }
+          return;
+        }
+  
+        if (isMounted) setUser(user);
+  
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", user.id)
           .single();
-
-        if (profileError || !profileData) throw new Error("Profile not found");
-        if (!isMounted) return;
-        setProfile(profileData);
-        setFormData({ username: profileData.username || "", bio: profileData.bio || "" });
+  
+        if (profileError || !profileData) {
+          if (isMounted) setErrorMessage("⚠️ Could not fetch your profile data.");
+          return;
+        }
+  
+        if (isMounted) {
+          setProfile(profileData);
+          setFormData({
+            username: profileData.username || "",
+            bio: profileData.bio || "",
+          });
+        }
       } catch (err) {
         if (isMounted) {
-          console.error("Profile load error:", err.message);
-          setErrorMessage("Something went wrong loading your profile.");
+          console.error("❌ Unexpected error:", err);
+          setErrorMessage("Unexpected error. Try again later.");
         }
       } finally {
         if (isMounted) setLoading(false);
       }
     };
-
+  
     fetchProfile();
-    return () => { isMounted = false; };
+  
+    timeout = setTimeout(() => {
+      if (isMounted && loading) {
+        setLoading(false);
+        setErrorMessage("⏱️ Request timed out. Try refreshing.");
+      }
+    }, 15000);
+  
+    return () => {
+      clearTimeout(timeout);
+      isMounted = false;
+    };
   }, []);
+  
 
   useEffect(() => {
     const refreshIncomingRequests = async () => {
