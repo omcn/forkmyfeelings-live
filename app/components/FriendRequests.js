@@ -21,7 +21,7 @@ export default function FriendRequests() {
         // Fetch friend requests where the logged-in user is the recipient.
         const { data, error } = await supabase
           .from("friends")
-          .select("id, user_id, profiles:profiles!friendships_user_id_fkey(username, avatar_url)")
+          .select("id, user_id, profiles:profiles!friends_user_id_fkey(username, avatar_url)")
           .eq("friend_id", user.id)
           .eq("status", "pending");
 
