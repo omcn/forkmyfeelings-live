@@ -578,9 +578,9 @@ export default function ProfilePage() {
   const [showRequests, setShowRequests] = useState(false);
   const [incomingCount, setIncomingCount] = useState(0);
   const [showFriends, setShowFriends] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
-  // Refresh pending friend requests for the current profile.
   const refreshIncomingRequests = async () => {
     if (!profile) return;
     try {
@@ -590,12 +590,12 @@ export default function ProfilePage() {
         .eq("friend_id", profile.id)
         .eq("status", "pending");
       if (error) {
-        console.error("Error refreshing requests:", error);
+        setErrorMessage("Error refreshing incoming requests.");
         return;
       }
       setIncomingCount(data.length);
-    } catch (err) {
-      console.error("Unexpected error refreshing requests:", err);
+    } catch {
+      setErrorMessage("Unexpected error refreshing incoming requests.");
     }
   };
 
@@ -603,22 +603,22 @@ export default function ProfilePage() {
     const getProfile = async () => {
       try {
         // Get the authenticated user
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data?.user) {
-          console.warn("❌ No user found:", error);
+        const { data } = await supabase.auth.getUser();
+        const currentUser = data?.user;
+        if (!currentUser) {
+          setErrorMessage("No user found. Please log in.");
           return;
         }
-        const currentUser = data.user;
         setUser(currentUser);
 
-        // Fetch the user's profile from the "profiles" table.
+        // Fetch profile from the "profiles" table.
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", currentUser.id)
           .single();
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
+        if (profileError || !profileData) {
+          setErrorMessage("Error fetching profile.");
           return;
         }
         setProfile(profileData);
@@ -626,15 +626,24 @@ export default function ProfilePage() {
           username: profileData.username || "",
           bio: profileData.bio || "",
         });
-      } catch (err) {
-        console.error("❌ Error in getProfile:", err);
+      } catch {
+        setErrorMessage("Unexpected error fetching profile.");
       } finally {
-        // Ensure that loading is always set to false.
         setLoading(false);
       }
     };
 
     getProfile();
+
+    // Fallback: if getProfile is still loading after 15 seconds, clear loading to unblock the UI.
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      if (!user || !profile) {
+        setErrorMessage("Request timed out. Please try again later.");
+      }
+    }, 15000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -666,7 +675,6 @@ export default function ProfilePage() {
       alert("Profile updated ✅");
       router.push("/");
     } else {
-      console.error("Error updating profile:", error);
       alert("Something went wrong ❌\n\n" + error.message);
     }
   };
@@ -676,31 +684,28 @@ export default function ProfilePage() {
     if (!file || !user) return;
     const fileExt = file.name.split(".").pop();
     const filePath = `${user.id}/avatar.${fileExt}`;
-    
+
     try {
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
-      
+
       const {
         data: { publicUrl },
       } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      if (!publicUrl) {
-        throw new Error("No public URL returned");
-      }
-      
+      if (!publicUrl) throw new Error("No public URL returned");
+
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: publicUrl })
         .eq("id", user.id);
       if (updateError) throw updateError;
-      
+
       alert("Profile picture updated ✅");
       router.refresh();
     } catch (err) {
       alert("Failed to update avatar ❌ " + err.message);
-      console.error("Avatar update error:", err);
     }
   };
 
@@ -710,6 +715,11 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-6 py-12">
+      {errorMessage && (
+        <div className="p-4 mb-4 text-center text-red-600 border border-red-300 rounded-lg">
+          {errorMessage}
+        </div>
+      )}
       <div className="relative inline-block">
         <img
           src={profile?.avatar_url || "/rascal-fallback.png"}
@@ -756,7 +766,6 @@ export default function ProfilePage() {
           className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400"
         />
 
-        {/* Modal Toggle Buttons */}
         <button
           onClick={() => {
             setShowRequests(false);
@@ -811,7 +820,7 @@ export default function ProfilePage() {
         />
       )}
 
-      {/* Render FriendList only when Requests modal is not active */}
+      {/* Render FriendList only if Requests modal is not active */}
       {!showRequests && showFriends && (
         <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
       )}
