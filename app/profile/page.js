@@ -779,6 +779,8 @@ export default function ProfilePage() {
         <button
           onClick={() => {
             setShowRequests(true);
+            setShowFriends(false);
+
           }}
           className="relative mt-4 bg-yellow-300 hover:bg-yellow-400 text-yellow-900 font-semibold py-2 px-4 rounded-xl transition"
         >
