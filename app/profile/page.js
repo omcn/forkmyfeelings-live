@@ -240,6 +240,7 @@ export default function ProfilePage() {
         </button>
       </div>
 
+     
       {showFindFriends && (
         <FindFriends
           currentUser={profile}
@@ -247,7 +248,7 @@ export default function ProfilePage() {
         />
       )}
 
-      {showFriends && (
+      {!showRequests && showFriends && (
         <FriendList
           currentUser={profile}
           onClose={() => setShowFriends(false)}
@@ -278,6 +279,8 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+
     </div>
   );
 }
