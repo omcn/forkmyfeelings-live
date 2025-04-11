@@ -2,81 +2,82 @@
 
 
 
+
+
 // "use client";
 // import { useEffect, useState } from "react";
 // import { useRouter } from "next/navigation";
 // import { supabase } from "../../lib/supabaseClient";
-// import FindFriends from "../components/FindFriends.js"; // adjust path if needed
+// import FindFriends from "../components/FindFriends";
 // import FriendRequests from "../components/FriendRequests";
 // import FriendList from "../components/FriendList";
-
-
-
 
 // export default function ProfilePage() {
 //   const [user, setUser] = useState(null);
 //   const [profile, setProfile] = useState(null);
 //   const [formData, setFormData] = useState({ username: "", bio: "" });
 //   const [loading, setLoading] = useState(true);
-//   const router = useRouter();
 //   const [showFindFriends, setShowFindFriends] = useState(false);
 //   const [showRequests, setShowRequests] = useState(false);
 //   const [incomingCount, setIncomingCount] = useState(0);
 //   const [showFriends, setShowFriends] = useState(false);
-
+//   const router = useRouter();
 
 //   const refreshIncomingRequests = async () => {
-//     if (!user) return;
+//     if (!profile) return;
 //     const { data, error } = await supabase
 //       .from("friends")
 //       .select("*")
-//       .eq("friend_id", user.id)
+//       .eq("friend_id", profile.id)
 //       .eq("status", "pending");
-  
+
 //     if (!error) setIncomingCount(data.length);
 //   };
 
+  
+  
 //   useEffect(() => {
-//     const fetchUserAndProfile = async () => {
-//       const { data: authData } = await supabase.auth.getUser();
-//       const user = authData?.user;
-//       setUser(user);
-
-//       if (user) {
-//         const { data, error } = await supabase
-//           .from("profiles")
-//           .select("*")
-//           .eq("id", user.id)
-//           .single();
-
-//         if (!error && data) {
-//           setProfile(data);
-//           setFormData({
-//             username: data.username || "",
-//             bio: data.bio || "",
-//           });
-//         }
+//     const getProfile = async () => {
+//       const {
+//         data: { user },
+//         error: userError
+//       } = await supabase.auth.getUser();
+      
+//       if (userError || !user) {
+//         console.warn("❌ No user found:", userError);
+//         setLoading(false);
+//         return;
 //       }
-
+      
+  
+//       setUser(user);
+  
+//       const { data: profile, error } = await supabase
+//         .from("profiles")
+//         .select("*")
+//         .eq("id", user.id)
+//         .single();
+  
+//       if (!error) {
+//         setProfile(profile);
+//         setFormData({
+//           username: profile.username || "",
+//           bio: profile.bio || "",
+//         });
+//       }
+  
 //       setLoading(false);
 //     };
-
-    
-//     const fetchIncomingRequests = async () => {
-//       if (!user) return;
-//       const { data, error } = await supabase
-//         .from("friends")
-//         .select("*")
-//         .eq("friend_id", profile.id)
-//         .eq("status", "pending");
-    
-//       if (!error) setIncomingCount(data.length);
-//     };
-//     fetchIncomingRequests();
-    
-
-//     fetchUserAndProfile();
+  
+//     getProfile();
 //   }, []);
+  
+
+//   useEffect(() => {
+//     if (profile) {
+//       refreshIncomingRequests();
+//     }
+//   }, [profile]);
 
 //   const handleChange = (e) => {
 //     setFormData((prev) => ({
@@ -86,7 +87,10 @@
 //   };
 
 //   const handleSave = async () => {
-//     if (!user) return;
+//     if (!user) {
+//       setLoading(false);
+//       return;
+//     }
 
 //     const updates = {
 //       id: user.id,
@@ -98,7 +102,7 @@
 
 //     if (!error) {
 //       alert("Profile updated ✅");
-//       router.push("/"); // 👈 Go back to main app
+//       router.push("/");
 //     } else {
 //       console.error(error);
 //       alert("Something went wrong ❌\n\n" + error.message);
@@ -117,13 +121,10 @@
 //       .upload(filePath, file, { upsert: true });
 
 //     if (uploadError) {
-//         console.error("Upload error:", uploadError);
-//         alert("Upload failed ❌\n\n" + uploadError.message);
-//       alert("Upload failed ❌");
+//       alert("Upload failed ❌\n\n" + uploadError.message);
 //       console.error(uploadError);
 //       return;
 //     }
-    
 
 //     const {
 //       data: { publicUrl },
@@ -139,7 +140,7 @@
 //       console.error(updateError);
 //     } else {
 //       alert("Profile picture updated ✅");
-//       router.refresh(); // refresh to show new avatar
+//       router.refresh();
 //     }
 //   };
 
@@ -159,7 +160,6 @@
 //           <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 border-2 border-white rounded-full"></span>
 //         )}
 //       </div>
-
 
 //       <label className="mt-2 text-sm text-pink-700 font-medium">
 //         Change profile picture
@@ -195,6 +195,7 @@
 //           onChange={handleChange}
 //           className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400"
 //         />
+
 //         <button
 //           onClick={() => setShowFindFriends(true)}
 //           className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl transition"
@@ -205,7 +206,7 @@
 //           onClick={() => setShowRequests(true)}
 //           className="relative mt-4 bg-yellow-300 hover:bg-yellow-400 text-yellow-900 font-semibold py-2 px-4 rounded-xl transition"
 //         >
-//           👥 requests
+//           👥 Requests
 //           {incomingCount > 0 && (
 //             <span className="absolute -top-2 -right-2 bg-red-500 w-4 h-4 rounded-full text-white text-xs flex items-center justify-center">
 //               {incomingCount}
@@ -218,15 +219,12 @@
 //         >
 //           🧑‍🤝‍🧑 My Friends
 //         </button>
-
 //         <button
-//             onClick={() => router.push("/submit")}
-//             className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition"
-//             >
-//             📤 Submit a Recipe
+//           onClick={() => router.push("/submit")}
+//           className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition"
+//         >
+//           📤 Submit a Recipe
 //         </button>
-
-
 //         <button
 //           onClick={handleSave}
 //           className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-lg transition"
@@ -234,19 +232,20 @@
 //           Save Changes
 //         </button>
 //       </div>
+
 //       {showFindFriends && (
-//         <FindFriends
-//           currentUser={user}
-//           onClose={() => setShowFindFriends(false)}
-//         />
+//         <FindFriends currentUser={profile} onClose={() => setShowFindFriends(false)} />
 //       )}
+
+//       {/* {showFriends && (
+//         <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
+//       )} */}
 //       {showFriends && (
-//         <FriendList
-//           currentUser={user}
-//           onClose={() => setShowFriends(false)}
-//         />
+//         // <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
+//         <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
 //       )}
-//       {showRequests && (
+
+//       {showRequests && profile && (
 //         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
 //           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative">
 //             <button
@@ -256,24 +255,23 @@
 //               ✕
 //             </button>
 //             <h2 className="text-xl font-bold mb-4">👥 Friend Requests</h2>
-
 //             {incomingCount === 0 ? (
 //               <p className="text-center text-gray-500">No new requests</p>
 //             ) : (
-//               <FriendRequests currentUser={profile} onClose={() => {
-//                 setShowRequests(false);
-//                 refreshIncomingRequests(); // ✅ refresh on close
-//               }} />
+//               <FriendRequests
+//                 currentUser={profile}
+//                 onClose={() => {
+//                   setShowRequests(false);
+//                   refreshIncomingRequests();
+//                 }}
+//               />
 //             )}
 //           </div>
 //         </div>
 //       )}
-
 //     </div>
 //   );
 // }
-
-
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -301,47 +299,46 @@ export default function ProfilePage() {
       .eq("friend_id", profile.id)
       .eq("status", "pending");
 
-    if (!error) setIncomingCount(data.length);
+    if (!error && data) {
+      setIncomingCount(data.length);
+    }
   };
 
-  
-  
   useEffect(() => {
     const getProfile = async () => {
-      const {
-        data: { user },
-        error: userError
-      } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        console.warn("❌ No user found:", userError);
+      try {
+        // Fetch authenticated user
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data?.user) {
+          console.warn("❌ No user found:", error);
+          return;
+        }
+        setUser(data.user);
+
+        // Fetch the user profile using the user id
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.user.id)
+          .single();
+        if (profileError) {
+          console.error("❌ Profile fetch error:", profileError);
+        } else if (profileData) {
+          setProfile(profileData);
+          setFormData({
+            username: profileData.username || "",
+            bio: profileData.bio || "",
+          });
+        }
+      } catch (err) {
+        console.error("❌ Error in getProfile:", err);
+      } finally {
         setLoading(false);
-        return;
       }
-      
-  
-      setUser(user);
-  
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-  
-      if (!error) {
-        setProfile(profile);
-        setFormData({
-          username: profile.username || "",
-          bio: profile.bio || "",
-        });
-      }
-  
-      setLoading(false);
     };
-  
+
     getProfile();
   }, []);
-  
 
   useEffect(() => {
     if (profile) {
@@ -369,7 +366,6 @@ export default function ProfilePage() {
     };
 
     const { error } = await supabase.from("profiles").upsert(updates);
-
     if (!error) {
       alert("Profile updated ✅");
       router.push("/");
@@ -389,20 +385,25 @@ export default function ProfilePage() {
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(filePath, file, { upsert: true });
-
     if (uploadError) {
       alert("Upload failed ❌\n\n" + uploadError.message);
       console.error(uploadError);
       return;
     }
 
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    // Get the public URL for the uploaded avatar
+    const { data: publicData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(filePath);
+
+    if (!publicData?.publicUrl) {
+      alert("Could not retrieve public URL for the uploaded avatar.");
+      return;
+    }
 
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ avatar_url: publicUrl })
+      .update({ avatar_url: publicData.publicUrl })
       .eq("id", user.id);
 
     if (updateError) {
@@ -504,15 +505,17 @@ export default function ProfilePage() {
       </div>
 
       {showFindFriends && (
-        <FindFriends currentUser={profile} onClose={() => setShowFindFriends(false)} />
+        <FindFriends
+          currentUser={profile}
+          onClose={() => setShowFindFriends(false)}
+        />
       )}
 
-      {/* {showFriends && (
-        <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
-      )} */}
       {showFriends && (
-        // <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
-        <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />
+        <FriendList
+          currentUser={profile}
+          onClose={() => setShowFriends(false)}
+        />
       )}
 
       {showRequests && profile && (
@@ -526,7 +529,9 @@ export default function ProfilePage() {
             </button>
             <h2 className="text-xl font-bold mb-4">👥 Friend Requests</h2>
             {incomingCount === 0 ? (
-              <p className="text-center text-gray-500">No new requests</p>
+              <p className="text-center text-gray-500">
+                No new requests
+              </p>
             ) : (
               <FriendRequests
                 currentUser={profile}
