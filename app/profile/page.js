@@ -641,7 +641,7 @@ export default function ProfilePage() {
       if (!user || !profile) {
         setErrorMessage("Request timed out. Please try again later.");
       }
-    }, 15000);
+    }, 60000);
 
     return () => clearTimeout(timeout);
   }, []);
