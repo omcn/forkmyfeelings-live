@@ -13,6 +13,8 @@ import EatOutSuggestions from "./components/EatOutSuggestion";
 import ingredientPrices from "../data/mockPrice";
 import RecipePostCapture from "./components/RecipePostCapture";
 import { supabase } from "../lib/supabaseClient";
+import { getMealSuggestions } from "../utils/mealSuggestionEngine";
+
 
 import { mergeImages } from "../lib/mergeImages";
 
@@ -96,6 +98,8 @@ export default function Home() {
   const [showFeed, setShowFeed] = useState(false);
   const [posts, setPosts] = useState([]);
   const [showFindFriends, setShowFindFriends] = useState(false);
+  const [debugMessage, setDebugMessage] = useState("");
+
 
 
 
@@ -270,50 +274,98 @@ export default function Home() {
   }, []);
   
 
+  
   // const handleMultiMoodSubmit = () => {
   //   if (selectedMoods.length === 0) return;
-  //   // const chosen = selectedMoods[Math.floor(Math.random() * selectedMoods.length)];
-  //   // setRecipe(recipes[chosen]);
-  //   const mood = selectedMoods[Math.floor(Math.random() * selectedMoods.length)];
-  //   const moodRecipes = recipes[mood];
-  //   const randomRecipe = moodRecipes[Math.floor(Math.random() * moodRecipes.length)];
+  
+  //   // Combine recipes across all selected moods
+  //   const allMatchingRecipes = selectedMoods.flatMap((mood) => recipes[mood] || []);
+  
+  //   // Remove duplicates by recipe ID (in case a recipe matches multiple moods)
+  //   const uniqueRecipes = Array.from(new Map(
+  //     allMatchingRecipes.map((recipe) => [recipe.id, recipe])
+  //   ).values());
+  
+  //   // Pick a truly random one from the full pool
+  //   if (uniqueRecipes.length === 0) return;
+  //   const randomRecipe = uniqueRecipes[Math.floor(Math.random() * uniqueRecipes.length)];
+  
   //   setRecipe(randomRecipe);
-
+  //   setMoodRating(0);
   //   setCookingMode(false);
   //   setShowSuggestionMessage(true);
   //   setShowRecipeCard(false);
+  
   //   setTimeout(() => {
   //     setShowSuggestionMessage(false);
   //     setShowRecipeCard(true);
   //   }, 2000);
   // };
-  const handleMultiMoodSubmit = () => {
-    if (selectedMoods.length === 0) return;
   
-    // Combine recipes across all selected moods
+
+  const handleMultiMoodSubmit = async () => {
+    if (selectedMoods.length === 0) {
+      setDebugMessage("⚠️ No moods selected.");
+      return;
+    }
+  
+    setDebugMessage("⏳ Fetching ratings...");
+  
+    const lastSuggestedId = localStorage.getItem("lastMealId");
+  
+    const { data: userRatings, error: userError } = await supabase
+      .from("recipe_ratings")
+      .select("recipe_id, rating, mood")
+      .eq("user_id", user.id)
+      .in("mood", selectedMoods);
+  
+    const { data: globalRatings, error: globalError } = await supabase
+      .from("recipe_ratings")
+      .select("recipe_id, rating, mood")
+      .in("mood", selectedMoods);
+  
+    if (userError || globalError) {
+      setDebugMessage("❌ Error fetching ratings.");
+      return;
+    }
+  
     const allMatchingRecipes = selectedMoods.flatMap((mood) => recipes[mood] || []);
-  
-    // Remove duplicates by recipe ID (in case a recipe matches multiple moods)
     const uniqueRecipes = Array.from(new Map(
       allMatchingRecipes.map((recipe) => [recipe.id, recipe])
     ).values());
   
-    // Pick a truly random one from the full pool
-    if (uniqueRecipes.length === 0) return;
-    const randomRecipe = uniqueRecipes[Math.floor(Math.random() * uniqueRecipes.length)];
+    if (uniqueRecipes.length === 0) {
+      setDebugMessage("❌ No matching recipes found.");
+      return;
+    }
   
-    setRecipe(randomRecipe);
+    const [suggestion] = getMealSuggestions({
+      userRatings,
+      globalRatings,
+      recipes: uniqueRecipes,
+      selectedMoods,
+      lastSuggestedId: Number(lastSuggestedId)
+    });
+  
+    if (!suggestion) {
+      setDebugMessage("❌ No suggestion returned from engine.");
+      return;
+    }
+  
+    localStorage.setItem("lastMealId", suggestion.id);
+    setRecipe(suggestion);
     setMoodRating(0);
     setCookingMode(false);
     setShowSuggestionMessage(true);
     setShowRecipeCard(false);
+    setDebugMessage(`✅ Suggested: ${suggestion.name}`);
   
     setTimeout(() => {
       setShowSuggestionMessage(false);
       setShowRecipeCard(true);
+      setDebugMessage(""); // Clear message after showing
     }, 2000);
   };
-  
   
 
   const handleReshuffle = () => {
@@ -501,9 +553,13 @@ export default function Home() {
 
 
           <motion.button
-            onClick={() => {
+            // onClick={() => {
+            //   chimeSound.play();
+            //   handleMultiMoodSubmit();
+            // }}
+            onClick={async () => {
               chimeSound.play();
-              handleMultiMoodSubmit();
+              await handleMultiMoodSubmit();
             }}
             className="mt-6 bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition"
             whileTap={{ scale: 0.97 }}

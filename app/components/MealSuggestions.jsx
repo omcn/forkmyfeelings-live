@@ -1,76 +1,86 @@
 
 
+
+
+
 // import { useEffect, useState } from "react";
-// import { supabase } from "../../lib/supabaseClient";  // Correct import for Supabase client
+// import { supabase } from "../../lib/supabaseClient";
+// import { getMealSuggestions } from "../../utils/mealSuggestionEngine";
 
 // export default function MealSuggestions({ user, selectedMoods }) {
 //   const [suggestedMeals, setSuggestedMeals] = useState([]);
 //   const [error, setError] = useState(null);
 
 //   useEffect(() => {
-//     // Ensure user and selectedMoods are valid
-//     if (!user || selectedMoods.length === 0) return; // Stop if no user or mood selected
+//     if (!user || selectedMoods.length === 0) return;
 
 //     const fetchSuggestions = async () => {
 //       try {
-//         // Fetch ratings for the user, filtered by the selected moods
-//         const { data: ratings, error: ratingsError } = await supabase
+//         // Step 1: Fetch global ratings for selected moods
+//         const { data: globalRatings, error: globalError } = await supabase
 //           .from("recipe_ratings")
 //           .select("recipe_id, rating, mood")
-//           .eq("user_id", user.id)
-//           .in("mood", selectedMoods)  // Fetch ratings for the moods selected
-//           .order("rating", { ascending: false }); // Sort by rating, highest first
+//           .in("mood", selectedMoods);
 
-//         if (ratingsError) {
-//           setError("Error fetching ratings: " + ratingsError.message);
+//         if (globalError) {
+//           setError("Error fetching global ratings: " + globalError.message);
 //           return;
 //         }
 
-//         // Get the recipe IDs from the ratings
-//         const recipeIds = ratings.map((rating) => rating.recipe_id);
+//         const globalRecipeIds = [...new Set(globalRatings.map(r => r.recipe_id))];
 
-//         // Fetch recipes based on the recipe IDs obtained from ratings
+//         // Step 2: Fetch corresponding recipes
 //         const { data: recipes, error: recipesError } = await supabase
 //           .from("recipes")
 //           .select("id, name, category, description, emoji, moods")
-//           .in("id", recipeIds);
+//           .in("id", globalRecipeIds);
 
 //         if (recipesError) {
 //           setError("Error fetching recipes: " + recipesError.message);
 //           return;
 //         }
 
-//         // Filter and prioritize recipes that match the selected moods
-//         const filteredMeals = recipes.filter((meal) => {
-//           const mealMoods = meal.moods || [];
-//           return selectedMoods.some((mood) => mealMoods.includes(mood));
+//         // Step 3: Fetch user ratings for selected moods
+//         const { data: userRatings, error: userError } = await supabase
+//           .from("recipe_ratings")
+//           .select("recipe_id, rating, mood")
+//           .eq("user_id", user.id)
+//           .in("mood", selectedMoods);
+
+//         if (userError) {
+//           setError("Error fetching user ratings: " + userError.message);
+//           return;
+//         }
+
+//         // Step 4: Get last suggested meal ID from localStorage
+//         const lastSuggestedId = localStorage.getItem("lastMealId");
+
+//         // Step 5: Run meal suggestion algorithm
+//         const finalMeals = getMealSuggestions({
+//           userRatings,
+//           globalRatings,
+//           recipes,
+//           lastSuggestedId: Number(lastSuggestedId)
 //         });
 
-//         // Sort the meals by their ratings (Highest rating first)
-//         const sortedMeals = filteredMeals.sort((a, b) => {
-//           const ratingA = ratings.find((rating) => rating.recipe_id === a.id)?.rating || 0;
-//           const ratingB = ratings.find((rating) => rating.recipe_id === b.id)?.rating || 0;
-//           return ratingB - ratingA; // Sort by rating, descending
-//         });
+//         // Step 6: Save the new suggestion ID
+//         if (finalMeals.length > 0) {
+//           localStorage.setItem("lastMealId", finalMeals[0].id);
+//         }
 
-//         setSuggestedMeals(sortedMeals);  // Set the meal suggestions
-
+//         setSuggestedMeals(finalMeals);
 //       } catch (err) {
 //         setError("Error fetching meal suggestions: " + err.message);
 //       }
 //     };
 
 //     fetchSuggestions();
-//   }, [user, selectedMoods]); // Re-run when user or selectedMoods change
+//   }, [user, selectedMoods]);
 
 //   return (
 //     <div>
 //       <h2>Suggested Meals Based on Your Mood</h2>
-
-//       {/* Error handling */}
 //       {error && <p>{error}</p>}
-
-//       {/* Meal suggestion list */}
 //       <ul>
 //         {suggestedMeals.length === 0 ? (
 //           <p>No suggestions available based on your mood.</p>
@@ -87,35 +97,31 @@
 //     </div>
 //   );
 // }
-
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { getMealSuggestions } from "../../utils/mealSuggestionEngine"; // Make sure this path is correct
 
 export default function MealSuggestions({ user, selectedMoods }) {
   const [suggestedMeals, setSuggestedMeals] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!user || selectedMoods.length === 0) return; // Stop if no user or mood selected
+    if (!user || selectedMoods.length === 0) return;
 
     const fetchSuggestions = async () => {
       try {
-        // Step 1: Fetch global ratings for the selected moods
         const { data: globalRatings, error: globalError } = await supabase
           .from("recipe_ratings")
           .select("recipe_id, rating, mood")
-          .in("mood", selectedMoods)  // Filter by selected moods
-          .order("rating", { ascending: false });
+          .in("mood", selectedMoods);
 
         if (globalError) {
           setError("Error fetching global ratings: " + globalError.message);
           return;
         }
 
-        // Get global recipe IDs (from other users' ratings)
-        const globalRecipeIds = globalRatings.map((rating) => rating.recipe_id);
+        const globalRecipeIds = [...new Set(globalRatings.map(r => r.recipe_id))];
 
-        // Step 2: Fetch recipes associated with those ratings
         const { data: recipes, error: recipesError } = await supabase
           .from("recipes")
           .select("id, name, category, description, emoji, moods")
@@ -126,42 +132,35 @@ export default function MealSuggestions({ user, selectedMoods }) {
           return;
         }
 
-        // Step 3: Fetch the user's ratings for the selected moods
         const { data: userRatings, error: userError } = await supabase
           .from("recipe_ratings")
           .select("recipe_id, rating, mood")
           .eq("user_id", user.id)
-          .in("mood", selectedMoods)
-          .order("rating", { ascending: false });
+          .in("mood", selectedMoods);
 
         if (userError) {
           setError("Error fetching user ratings: " + userError.message);
           return;
         }
 
-        // Step 4: Combine User Ratings and Global Ratings
-        let finalMeals = [];
+        // Get last suggested meal ID
+        const lastSuggestedId = localStorage.getItem("lastMealId");
 
-        if (userRatings.length > 0) {
-          // If the user has ratings, prioritize those
-          finalMeals = recipes.filter((meal) =>
-            userRatings.some((rating) => rating.recipe_id === meal.id)
-          );
-        } else {
-          // If the user doesn't have ratings, use the global ratings
-          finalMeals = recipes.filter((meal) =>
-            globalRatings.some((rating) => rating.recipe_id === meal.id)
-          );
-        }
-
-        // Sort meals by rating (user ratings or global ratings)
-        finalMeals = finalMeals.sort((a, b) => {
-          const ratingA = userRatings.find((rating) => rating.recipe_id === a.id)?.rating || 0;
-          const ratingB = userRatings.find((rating) => rating.recipe_id === b.id)?.rating || 0;
-          return ratingB - ratingA;
+        // 🔁 Run the algorithm with full mood context
+        const finalMeals = getMealSuggestions({
+          userRatings,
+          globalRatings,
+          recipes,
+          selectedMoods,
+          lastSuggestedId: Number(lastSuggestedId)
         });
 
-        setSuggestedMeals(finalMeals); // Set the combined meal suggestions
+        // Save the new suggestion
+        if (finalMeals.length > 0) {
+          localStorage.setItem("lastMealId", finalMeals[0].id);
+        }
+
+        setSuggestedMeals(finalMeals);
 
       } catch (err) {
         setError("Error fetching meal suggestions: " + err.message);
@@ -169,16 +168,12 @@ export default function MealSuggestions({ user, selectedMoods }) {
     };
 
     fetchSuggestions();
-  }, [user, selectedMoods]); // Re-run when user or selectedMoods change
+  }, [user, selectedMoods]);
 
   return (
     <div>
       <h2>Suggested Meals Based on Your Mood</h2>
-
-      {/* Error handling */}
       {error && <p>{error}</p>}
-
-      {/* Meal suggestion list */}
       <ul>
         {suggestedMeals.length === 0 ? (
           <p>No suggestions available based on your mood.</p>
