@@ -457,7 +457,7 @@ export default function Home() {
             <motion.div
               className="absolute"
               style={{
-                left: isMobile ? "29%" : "38%",
+                left: isMobile ? "28.5%" : "38%",
                 top: isMobile ? "40%" : "46%",
                 transform: "translate(-50%, -50%)",
               }}
@@ -539,7 +539,7 @@ export default function Home() {
               // top: "40%",
               // transform: "translate(-50%, -50%)",
               left: isMobile ? "32%" : "41%",
-              top: isMobile ? "35%" : "45%",
+              top: isMobile ? "32%" : "45%",
               transform: "translate(-50%, -50%)",
             }}
           />
