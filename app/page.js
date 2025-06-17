@@ -88,6 +88,12 @@ function MoodTooltip({ label, children }) {
   );
 }
 
+// const rascalVideos = {
+//   sad: "/videos/rascal-sad.mp4",
+//   tired: "/videos/rascal-tired.mp4",
+//   default: "/rascal-fallback.png", // fallback image
+// };
+// const currentMood = selectedMoods[0] || "default";
 
 
 export default function Home() {
@@ -446,7 +452,7 @@ export default function Home() {
               }
             }}
             whileTap={{ scale: 0.97 }}
-            className="mb-4 bg-purple-200 hover:bg-purple-300 text-purple-800 font-semibold py-2 px-4 rounded-xl shadow-sm transition"
+            className="mb-8 bg-purple-200 hover:bg-purple-300 text-purple-800 font-semibold py-4 px-8 rounded-full shadow-sm transition"
           >
             {eatOutMode ? "Back to Mood Recipes" : "I'm Eating Out 🍽️"}
           </motion.button>
@@ -525,24 +531,56 @@ export default function Home() {
               
             </motion.div>
 
-            {/* Rascal centered on same anchor */}
-            <motion.img
-            src="/rascal-fallback.png"
-            alt="Rascal Mascot"
-            animate={{ scale: [2, 2.05, 2] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="absolute z-20 rounded-full border-2 border-pink-300 shadow-lg bg-white object-contain"
-            style={{
-              width: window.innerWidth < 640 ? "64px" : "96px",  // Adjust sizes as needed
-              height: window.innerWidth < 640 ? "64px" : "96px",
-              // left: "46%",
-              // top: "40%",
-              // transform: "translate(-50%, -50%)",
-              left: isMobile ? "32%" : "41%",
-              top: isMobile ? "38%" : "45%",
-              transform: "translate(-50%, -50%)",
-            }}
-          />
+            {/* Rascal reacts to mood */}
+            {(() => {
+              const rascalVideos = {
+                sad: "/videos/rascal-sad.mp4",
+                tired: "/videos/rascal-tired.mp4",
+                default: "/videos/rascal-idle.mp4",
+              };
+
+              const currentMood = selectedMoods[0] || "default";
+              // const isVideo = rascalVideos[currentMood]?.endsWith(".mp4");
+              // const currentMood = selectedMoods[0];
+              const videoSrc = rascalVideos[currentMood];
+              const isVideo = Boolean(videoSrc);
+
+
+              const wrapperStyle = {
+                width: isMobile ? "96px" : "250px",
+                height: isMobile ? "96px" : "250px",
+                left: isMobile ? "32%" : "50%",
+                top: isMobile ? "38%" : "50%",
+                transform: "translate(-50%, -50%)",
+              };
+
+              return (
+                <div
+                  className="absolute z-20 rounded-full border-2 border-pink-300 shadow-lg bg-white overflow-hidden"
+                  style={wrapperStyle}
+                >
+                  {isVideo ? (
+                    <video
+                      key={currentMood}
+                      src={rascalVideos[currentMood]}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      key="fallback"
+                      src={rascalVideos.default}
+                      alt="Rascal Mascot"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+              );
+            })()}
+
 
           </div>
 
@@ -556,7 +594,7 @@ export default function Home() {
               chimeSound.play();
               await handleMultiMoodSubmit();
             }}
-            className="mt-6 bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition"
+            className="mt-12 bg-pink-500 hover:bg-pink-600 text-white font-semibold py-6 px-12 rounded-full shadow-md transition"
             whileTap={{ scale: 0.97 }}
           >
             Feed Me
