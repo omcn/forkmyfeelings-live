@@ -549,7 +549,7 @@ export default function Home() {
               const wrapperStyle = {
                 width: isMobile ? "200px" : "250px",
                 height: isMobile ? "200px" : "250px",
-                left: isMobile ? "40%" : "50%",
+                left: isMobile ? "38%" : "50%",
                 top: isMobile ? "45%" : "50%",
                 transform: "translate(-50%, -50%)",
               };
