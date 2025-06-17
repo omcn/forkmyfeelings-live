@@ -592,10 +592,10 @@ export default function Home() {
                 const videoSrc = rascalVideos[currentMood] || "/videos/rascal-idle.mp4";
 
                 const wrapperStyle = {
-                  width: isMobile ? "96px" : "250px",
-                  height: isMobile ? "96px" : "250px",
-                  left: "50%",
-                  top: "50%",
+                  width: isMobile ? "200px" : "250px",
+                  height: isMobile ? "200px" : "250px",
+                  left: isMobile ? "38%" : "50%",   // 👈 your original mobile vs desktop positions
+                  top: isMobile ? "45%" : "50%",
                   transform: "translate(-50%, -50%)",
                 };
 
