@@ -19,6 +19,7 @@ export function getMealSuggestions({
     selectedMoods = [],
     lastSuggestedId = null
   }) {
+    // console.log("🔍 Engine output:", suggestion);
     if (!recipes || recipes.length === 0) return [];
   
     // ✅ Filter ratings by selected mood(s)

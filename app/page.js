@@ -17,40 +17,52 @@ import { getMealSuggestions } from "../utils/mealSuggestionEngine";
 
 
 import { mergeImages } from "../lib/mergeImages";
+import { b } from "framer-motion/client";
 
 // import { motion } from "framer-motion";
 
 const moodEmojis = {
-  anxious: "😰",
+  // anxious: "😰",
+  // tired: "😴",
+  // happy: "😊",
+  // sad: "😢",
+  // angry: "😠",
+  // lonely: "😔",
+  // jealous: "😒",
+  // excited: "🤩",
+  // grateful: "🙏",
+  // overwhelmed: "😵‍💫",
+  // breakup: "💔",
+  // bored: "😐",
+  // celebrating: "🥳",
+  // working: "💼",
+  // studying: "📚",
+  // raining: "🌧️",
+  // sunny: "☀️",
+  // hungover: "🤕",
+  // traveling: "✈️",
+  // "date-night": "💘",
+  // lazy: "🛋️",
+  // energetic: "⚡",
+  // restless: "🌀",
+  // focused: "🎯",
+  // "burnt-out": "🔥",
+  // motivated: "🏃",
+  // wired: "😳",
+  // calm: "🧘",
+  // chill: "🧊",
+  // exhausted: "🥱",
+
   tired: "😴",
   happy: "😊",
   sad: "😢",
-  angry: "😠",
-  lonely: "😔",
-  jealous: "😒",
-  excited: "🤩",
-  grateful: "🙏",
-  overwhelmed: "😵‍💫",
-  breakup: "💔",
-  bored: "😐",
-  celebrating: "🥳",
-  working: "💼",
-  studying: "📚",
-  raining: "🌧️",
-  sunny: "☀️",
-  hungover: "🤕",
-  traveling: "✈️",
+  rushed: "⏰",
   "date-night": "💘",
-  lazy: "🛋️",
-  energetic: "⚡",
-  restless: "🌀",
-  focused: "🎯",
-  "burnt-out": "🔥",
-  motivated: "🏃",
-  wired: "😳",
-  calm: "🧘",
   chill: "🧊",
-  exhausted: "🥱",
+  recovering: "🛌",
+  bored: "😐",
+  nostalgic: "🕰️",
+  overwhelmed: "😵‍💫",
 };
 
 
@@ -440,12 +452,12 @@ export default function Home() {
           </motion.button>
 
 
-          <div className="relative w-full h-[600px] flex items-center justify-center">
+          <div className="relative w-[500px] h-[500px] mx-auto">
             {/* Mood Buttons in orbit */}
             <motion.div
               className="absolute"
               style={{
-                left: isMobile ? "44%" : "48%",
+                left: isMobile ? "40%" : "38%",
                 top: isMobile ? "50%" : "46%",
                 transform: "translate(-50%, -50%)",
               }}
@@ -457,37 +469,12 @@ export default function Home() {
                 },
               }}
             >
-              {Object.keys(recipes).length === 0 ? (
-                <p className="text-gray-500 text-center mt-20">Loading recipes...</p>
-              ) : (
-                Object.keys(recipes)
+              {Object.keys(recipes)
                   .filter((moodKey) => moodKey !== "default")
                   .map((moodKey, i, arr) => {
                     const total = arr.length;
-                    const ringIndex = i % 2; // alternate layers
-                    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-                    const radius = ringIndex === 0 
-                      ? isMobile ? 110 : 150 
-                      : isMobile ? 170 : 200 ;
-                    // const radius = ringIndex === 0 ? 200 : 280;
-                    const baseAngle = (360 / (total / 2)) * Math.floor(i / 2)+ 15;
-                    // const offset = 360 / total / 2.5; // was /4 before
-                    const offset = isMobile ? 360 / total / 3.2 : 360 / total / 2.5;
-
-                    const angle = ringIndex === 0 ? baseAngle : baseAngle + offset;
-
-                    // const total = moodKeys.length;
-                    // const half = Math.ceil(total / 2);
-                    // const angleStep = 360 / half;
-                    // const offset = angleStep / 2;
-                    // const angle = ringIndex === 0 ? angleStep * i : angleStep * (i - half) + offset;
-
-
-                    // const angle = (360 / (total / 2)) * Math.floor(i / 2);
-                    // const baseAngle = (360 / (total / 2)) * Math.floor(i / 2);
-                    // const angle = ringIndex === 0 ? baseAngle : baseAngle + (360 / total / 4); // offset second ring
-
-
+                    const angle = (360 / total) * i;
+                    const radius = isMobile ? 160 : 220;
                     const x = radius * Math.cos((angle * Math.PI) / 180);
                     const y = radius * Math.sin((angle * Math.PI) / 180);
 
@@ -496,9 +483,12 @@ export default function Home() {
                         key={moodKey}
                         style={{
                           position: "absolute",
-                          left: `${x}px`,
-                          top: `${y}px`,
+                          left: `calc(50% + ${x}px)`,
+                          top: `calc(50% + ${y}px)`,
                           transform: "translate(-50%, -50%)",
+                          width: isMobile ? "90px" : "130px",
+                          height: isMobile ? "60px" : "70px",
+                          borderRadius: "999px",
                         }}
                         variants={{
                           hidden: { opacity: 0, scale: 0.8 },
@@ -513,21 +503,26 @@ export default function Home() {
                           );
                         }}
                         whileTap={{ scale: 0.95 }}
-                        className={`shadow-md px-3 py-1.5 rounded-xl border transition text-sm sm:text-base whitespace-nowrap ${
+                        className={`shadow-md px-4 py-2 text-base rounded-full border transition ${
                           selectedMoods.includes(moodKey)
                             ? "bg-pink-200 border-pink-400"
                             : "bg-white border-gray-300 hover:bg-pink-100"
                         }`}
                       >
-                       <MoodTooltip label={moodKey.charAt(0).toUpperCase() + moodKey.slice(1)}>
-                        <span>{moodEmojis[moodKey] || "🍽️"}</span>
-                      </MoodTooltip>
-
-
+                        <div className="flex flex-col items-center justify-center">
+                          <span style={{ fontSize: "1.5rem" }}>
+                            {moodEmojis[moodKey] || "🍽️"}
+                          </span>
+                          <span className="text-sm font-medium mt-1 capitalize">
+                            {moodKey.replace("-", " ")}
+                          </span>
+                        </div>
                       </motion.button>
                     );
-                  })
-              )}
+                  })}
+
+                                  
+              
             </motion.div>
 
             {/* Rascal centered on same anchor */}
@@ -543,8 +538,8 @@ export default function Home() {
               // left: "46%",
               // top: "40%",
               // transform: "translate(-50%, -50%)",
-              left: isMobile ? "42%" : "46%",
-              top: isMobile ? "48%" : "40%",
+              left: isMobile ? "50%" : "41%",
+              top: isMobile ? "50%" : "45%",
               transform: "translate(-50%, -50%)",
             }}
           />
