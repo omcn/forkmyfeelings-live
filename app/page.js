@@ -539,7 +539,7 @@ export default function Home() {
               // top: "40%",
               // transform: "translate(-50%, -50%)",
               left: isMobile ? "32%" : "41%",
-              top: isMobile ? "32%" : "45%",
+              top: isMobile ? "38%" : "45%",
               transform: "translate(-50%, -50%)",
             }}
           />
