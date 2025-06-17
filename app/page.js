@@ -458,7 +458,7 @@ export default function Home() {
               className="absolute"
               style={{
                 left: isMobile ? "40%" : "38%",
-                top: isMobile ? "50%" : "46%",
+                top: isMobile ? "40%" : "46%",
                 transform: "translate(-50%, -50%)",
               }}
               initial="hidden"
@@ -538,7 +538,7 @@ export default function Home() {
               // left: "46%",
               // top: "40%",
               // transform: "translate(-50%, -50%)",
-              left: isMobile ? "50%" : "41%",
+              left: isMobile ? "40%" : "41%",
               top: isMobile ? "50%" : "45%",
               transform: "translate(-50%, -50%)",
             }}
