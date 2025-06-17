@@ -547,10 +547,10 @@ export default function Home() {
 
 
               const wrapperStyle = {
-                width: isMobile ? "96px" : "250px",
-                height: isMobile ? "96px" : "250px",
-                left: isMobile ? "32%" : "50%",
-                top: isMobile ? "38%" : "50%",
+                width: isMobile ? "150px" : "250px",
+                height: isMobile ? "150px" : "250px",
+                left: isMobile ? "50%" : "50%",
+                top: isMobile ? "50%" : "50%",
                 transform: "translate(-50%, -50%)",
               };
 
