@@ -532,7 +532,7 @@ export default function Home() {
             </motion.div>
 
             {/* Rascal reacts to mood */}
-            {(() => {
+            {/* {(() => {
               const rascalVideos = {
                 sad: "/videos/rascal-sad.mp4",
                 tired: "/videos/rascal-tired.mp4",
@@ -580,6 +580,48 @@ export default function Home() {
                 </div>
               );
             })()}
+ */}
+              {(() => {
+                const rascalVideos = {
+                  sad: "/videos/rascal-sad.mp4",
+                  tired: "/videos/rascal-tired.mp4",
+                  // add more as needed
+                };
+
+                const currentMood = selectedMoods[0];
+                const videoSrc = rascalVideos[currentMood] || "/videos/rascal-idle.mp4";
+
+                const wrapperStyle = {
+                  width: isMobile ? "96px" : "250px",
+                  height: isMobile ? "96px" : "250px",
+                  left: "50%",
+                  top: "50%",
+                  transform: "translate(-50%, -50%)",
+                };
+
+                return (
+                  <div
+                    className="absolute z-20 rounded-full border-2 border-pink-300 shadow-lg bg-white overflow-hidden"
+                    style={wrapperStyle}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.video
+                        key={videoSrc}
+                        src={videoSrc}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </AnimatePresence>
+                  </div>
+                );
+              })()}
 
 
           </div>
