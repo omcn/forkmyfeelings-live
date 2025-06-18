@@ -585,6 +585,16 @@ export default function Home() {
                 const rascalVideos = {
                   sad: "/videos/rascal-sad.mp4",
                   tired: "/videos/rascal-tired.mp4",
+                  chill: "/videos/rascal-chill.mp4",
+                  rushed: "/videos/rascal-rushed.mp4",
+                  sad: "/videos/rascal-sad.mp4",
+                  happy: "/videos/rascal-happy.mp4",
+                  overwhelmed: "/videos/rascal-overwhelmed.mp4",
+                  nostalgic: "/videos/rascal-nostalgic.mp4",
+                  "date-night": "/videos/rascal-date-night.mp4",
+                  hangover: "/videos/rascal-recovering.mp4",
+                  bored: "/videos/rascal-bored.mp4",
+
                   // add more as needed
                 };
 
