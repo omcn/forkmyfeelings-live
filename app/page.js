@@ -117,6 +117,9 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
   const [showFindFriends, setShowFindFriends] = useState(false);
   const [debugMessage, setDebugMessage] = useState("");
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [isTiming, setIsTiming] = useState(false);
+
 
 
 
@@ -230,6 +233,16 @@ export default function Home() {
   //     listener?.subscription.unsubscribe();
   //   };
   // }, []);
+  useEffect(() => {
+    if (isTiming && timeLeft > 0) {
+      const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
+      return () => clearTimeout(timer); // clear previous timeout on update
+    } else if (timeLeft === 0) {
+      setIsTiming(false);
+      new Howl({ src: ["/sounds/chime.mp3"], volume: 0.5 }).play(); // optional
+    }
+  }, [timeLeft, isTiming]);
+  
 
   useEffect(() => {
     let listener;
@@ -291,7 +304,12 @@ export default function Home() {
     };
   }, []);
   
+  function extractMinutes(stepText) {
+    const match = stepText.match(/(\d+)\s*(min|minutes?)/i);
+    return match ? parseInt(match[1]) : null;
+  }
 
+  
   
   // const handleMultiMoodSubmit = () => {
   //   if (selectedMoods.length === 0) return;
@@ -891,6 +909,37 @@ export default function Home() {
               Step {activeStepIndex + 1} of {stepsArray.length}
             </h3>
             <p className="text-gray-800 mb-4">{stepsArray[activeStepIndex]}</p>
+            {(() => {
+              const minutes = extractMinutes(stepsArray[activeStepIndex]);
+
+              if (minutes && !isTiming && timeLeft === null) {
+                return (
+                  <button
+                    onClick={() => {
+                      setTimeLeft(minutes * 60);
+                      setIsTiming(true);
+                    }}
+                    className="mt-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-xl"
+                  >
+                    ⏱️ Start {minutes}-Minute Timer
+                  </button>
+                );
+              } else if (isTiming && timeLeft > 0) {
+                return (
+                  <p className="mt-4 text-lg text-pink-600 font-bold">
+                    ⏳ {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')} left...
+                  </p>
+                );
+              } else if (isTiming && timeLeft === 0) {
+                return (
+                  <p className="mt-4 text-green-600 font-semibold">
+                    ✅ Time’s up! Let’s keep going.
+                  </p>
+                );
+              }
+              return null;
+            })()}
+
 
             <div className="flex justify-between items-center">
               <button
