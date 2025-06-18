@@ -588,7 +588,7 @@ export default function Home() {
                   chill: "/videos/rascal-chill.mp4",
                   rushed: "/videos/rascal-rushed.mp4",
                   sad: "/videos/rascal-sad.mp4",
-                  happy: "/videos/rascal-happy.mp4",
+                  happy: "/videos/rascal-happy1.mp4",
                   overwhelmed: "/videos/rascal-overwhelmed.mp4",
                   nostalgic: "/videos/rascal-nostalgic.mp4",
                   "date-night": "/videos/rascal-date-night.mp4",
