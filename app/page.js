@@ -505,7 +505,7 @@ export default function Home() {
                           setSelectedMoods((prev) =>
                             prev[0] === moodKey ? [] : [moodKey]
                           );
-                          
+                          ;
 
                         }}
                         whileTap={{ scale: 0.95 }}
@@ -588,7 +588,7 @@ export default function Home() {
                   chill: "/videos/rascal-chill.mp4",
                   rushed: "/videos/rascal-rushed.mp4",
                   sad: "/videos/rascal-sad.mp4",
-                  happy: "/videos/rascal-happy1.mp4",
+                  happy: "/videos/rascal-happy.mp4",
                   overwhelmed: "/videos/rascal-overwhelmed.mp4",
                   nostalgic: "/videos/rascal-nostalgic.mp4",
                   "date-night": "/videos/rascal-date-night.mp4",
@@ -850,58 +850,76 @@ export default function Home() {
       
 
       {cookingMode && (() => {
-      let stepsArray = [];
-      try {
-        stepsArray = Array.isArray(recipe.steps)
-          ? recipe.steps
-          : JSON.parse(recipe.steps || "[]");
-      } catch (err) {
-        console.error("❌ Failed to parse steps", err);
-      }
-      
+        let stepsArray = [];
+        try {
+          stepsArray = Array.isArray(recipe.steps)
+            ? recipe.steps
+            : JSON.parse(recipe.steps || "[]");
+        } catch (err) {
+          console.error("❌ Failed to parse steps", err);
+        }
 
-      return (
-        <div className="mt-6 bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            {recipe.emoji} {recipe.name}
-          </h2>
-          <h3 className="text-xl font-semibold mb-2">
-            Step {activeStepIndex + 1} of {stepsArray.length}
-          </h3>
-          <p className="text-gray-800 mb-4">{stepsArray[activeStepIndex]}</p>
+        return (
+          <div className="mt-6 bg-white p-6 rounded-2xl shadow-xl max-w-4xl w-full">
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-between mb-6">
+              {/* Left side: Mood info */}
+              <div className="flex-1 text-center md:text-left">
+                <p className="text-sm text-gray-500">You’re feeling...</p>
+                <h2 className="text-2xl font-bold mt-1 capitalize">
+                  {moodEmojis[selectedMoods[0]]} {selectedMoods[0]}
+                </h2>
+                <p className="text-md mt-2 text-gray-600 italic">
+                  Let’s cook something to match your vibe.
+                </p>
+              </div>
 
-          <div className="flex justify-between items-center">
-            <button
-              onClick={() => setActiveStepIndex((i) => Math.max(0, i - 1))}
-              disabled={activeStepIndex === 0}
-              className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-30"
-            >
-              ← Back
-            </button>
-            {activeStepIndex < stepsArray.length - 1 ? (
+              {/* Right side: Rascal animation */}
+              <div className="flex-1 flex justify-center">
+                <video
+                  src="/videos/rascal-cooking.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="w-48 h-48 md:w-60 md:h-60 rounded-full shadow-lg object-cover"
+                />
+              </div>
+            </div>
+
+            {/* Recipe Step Display */}
+            <h3 className="text-xl font-semibold mb-2">
+              Step {activeStepIndex + 1} of {stepsArray.length}
+            </h3>
+            <p className="text-gray-800 mb-4">{stepsArray[activeStepIndex]}</p>
+
+            <div className="flex justify-between items-center">
               <button
-                onClick={() =>
-                  setActiveStepIndex((i) => Math.min(stepsArray.length - 1, i + 1))
-                }
-                className="text-sm text-pink-500 hover:text-pink-700"
+                onClick={() => setActiveStepIndex((i) => Math.max(0, i - 1))}
+                disabled={activeStepIndex === 0}
+                className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-30"
               >
-                Next →
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  // setShowRatingModal(true);
-                  // setCookingMode(false);
-                  // setActiveStepIndex(0);
-                  setShowRatingModal(true); // Show rating modal
-
-                }}
-                className="text-sm text-green-600 hover:text-green-800"
-              >
-                Done ✓
+                ← Back
               </button>
 
-            )}
+              {activeStepIndex < stepsArray.length - 1 ? (
+                <button
+                  onClick={() =>
+                    setActiveStepIndex((i) => Math.min(stepsArray.length - 1, i + 1))
+                  }
+                  className="text-sm text-pink-500 hover:text-pink-700"
+                >
+                  Next →
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowRatingModal(true)}
+                  className="text-sm text-green-600 hover:text-green-800"
+                >
+                  Done ✓
+                </button>
+              )}
+            </div>
+
             {showRatingModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative text-center">
@@ -931,16 +949,10 @@ export default function Home() {
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
                       onClick={() => {
-                        // setMoodRating(0); // or the selected star value
                         setShowRatingModal(false);
                         setCookingMode(false);
                         setActiveStepIndex(0);
-                        // setMoodRating(0); // "Not feeling it" = 0
-                        setShowRatingModal(false);
-                        setRecipe(null);           // 👈 reset the selected recipe
-                        setActiveStepIndex(0);     // 👈 reset step
-                        console.log("User didn't vibe with this one.");
-                        // Later: Save to Supabase
+                        setRecipe(null);
                       }}
                       className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-xl transition"
                     >
@@ -948,18 +960,12 @@ export default function Home() {
                     </button>
                     <button
                       onClick={() => {
-                        setMoodRating(moodRating); // or the selected star value
+                        setMoodRating(moodRating);
                         setCookingMode(false);
                         setActiveStepIndex(0);
                         setShowRatingModal(false);
-                        // setRecipe(null);           // 👈 reset the selected recipe
-                        setActiveStepIndex(0); 
                         submitRecipeRating(moodRating);
                         setShowPostCapture(true);
-                        // handleReshuffle();
-                            // 👈 reset step
-                        console.log("Saved mood rating:", moodRating);
-                        // Later: Save to Supabase
                       }}
                       className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-xl transition"
                     >
@@ -969,19 +975,10 @@ export default function Home() {
                 </div>
               </div>
             )}
-            
-
-            {/* </div> // 👈 LEAVE THIS — it closes your main return */}
-
-           
-
-
-            
-
           </div>
-        </div>
-      );
-    })()}
+        );
+      })()}
+
     {!cookingMode && !showRecipeCard && !showRatingModal && (
   <>
     <button
