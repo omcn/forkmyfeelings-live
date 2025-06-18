@@ -503,10 +503,10 @@ export default function Home() {
                         onClick={() => {
                           clickSound.play();
                           setSelectedMoods((prev) =>
-                            prev.includes(moodKey)
-                              ? prev.filter((m) => m !== moodKey)
-                              : [...prev, moodKey]
+                            prev[0] === moodKey ? [] : [moodKey]
                           );
+                          
+
                         }}
                         whileTap={{ scale: 0.95 }}
                         className={`shadow-md px-4 py-2 text-base rounded-full border transition ${
