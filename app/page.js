@@ -15,6 +15,10 @@ import RecipePostCapture from "./components/RecipePostCapture";
 import { supabase } from "../lib/supabaseClient";
 import { getMealSuggestions } from "../utils/mealSuggestionEngine";
 
+import Confetti from "react-confetti";
+import { useWindowSize } from "@uidotdev/usehooks"; // or your own width/height hook
+
+
 
 import { mergeImages } from "../lib/mergeImages";
 import { b } from "framer-motion/client";
@@ -119,6 +123,7 @@ export default function Home() {
   const [debugMessage, setDebugMessage] = useState("");
   const [timeLeft, setTimeLeft] = useState(null);
   const [isTiming, setIsTiming] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
 
 
@@ -961,8 +966,10 @@ export default function Home() {
                 </button>
               ) : (
                 <button
-                  onClick={() => setShowRatingModal(true)}
-                  className="text-sm text-green-600 hover:text-green-800"
+                onClick={() => {
+                  setShowCelebration(true);
+                  setTimeout(() => setShowRatingModal(true), 1500); // show modal after confetti
+                }}
                 >
                   Done ✓
                 </button>
@@ -993,6 +1000,16 @@ export default function Home() {
                         ★
                       </button>
                     ))}
+                    {showCelebration && (
+                      <div className="fixed inset-0 z-[9999] pointer-events-none">
+                        <Confetti
+                          width={window.innerWidth}
+                          height={window.innerHeight}
+                          numberOfPieces={10000}
+                          recycle={false}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
