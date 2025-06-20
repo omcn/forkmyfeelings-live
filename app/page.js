@@ -22,6 +22,8 @@ import { useWindowSize } from "@uidotdev/usehooks"; // or your own width/height 
 
 import { mergeImages } from "../lib/mergeImages";
 import { b } from "framer-motion/client";
+import RascalSpaceGlide from "./components/RascalSpaceGlide";
+
 
 // import { motion } from "framer-motion";
 
@@ -931,10 +933,25 @@ export default function Home() {
                 );
               } else if (isTiming && timeLeft > 0) {
                 return (
-                  <p className="mt-4 text-lg text-pink-600 font-bold">
-                    ⏳ {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')} left...
-                  </p>
+                  <>
+                    <p className="mt-4 text-lg text-pink-600 font-bold">
+                      ⏳ {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')} left...
+                    </p>
+                    {timeLeft > 0 && isTiming && (
+                      <div className="my-6">
+                        <RascalSpaceGlide
+                          secondsRemaining={timeLeft}
+                          onTimeUp={() => {
+                            setTimeLeft(0);
+                            setIsTiming(false);
+                            setActiveStepIndex((i) => Math.min(i + 1, stepsArray.length - 1));
+                          }}
+                        />
+                      </div>
+                    )}
+                  </>
                 );
+                
               } else if (isTiming && timeLeft === 0) {
                 return (
                   <p className="mt-4 text-green-600 font-semibold">
