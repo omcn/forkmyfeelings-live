@@ -549,7 +549,9 @@ export default function Home() {
                   .filter((moodKey) => moodKey !== "default")
                   .map((moodKey, i, arr) => {
                     const total = arr.length;
-                    const angle = (360 / total) * i;
+                    // Start at -90° (top) so single buttons land at top/bottom
+                    // instead of pairs, eliminating overlap
+                    const angle = (360 / total) * i - 90;
                     const x = radius * Math.cos((angle * Math.PI) / 180);
                     const y = radius * Math.sin((angle * Math.PI) / 180);
 
