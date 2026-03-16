@@ -21,6 +21,7 @@ import RascalSpaceGlide from "./components/RascalSpaceGlide";
 import Onboarding from "./components/Onboarding";
 import SavedRecipes from "./components/SavedRecipes";
 import NotificationPrompt from "./components/NotificationPrompt";
+import TodayFeedModal from "./components/TodayFeedModal";
 import toast from "react-hot-toast";
 
 
@@ -129,6 +130,8 @@ export default function Home() {
   const [isTiming, setIsTiming] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
+  const [noRecipesFound, setNoRecipesFound] = useState(false);
+  const [recipeAvgRating, setRecipeAvgRating] = useState(null);
   const [savedIds, setSavedIds] = useState(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -300,10 +303,11 @@ export default function Home() {
         setPosts(postData);
       }
   
-      // 3. Load recipes and group by moods
+      // 3. Load approved recipes and group by moods
       const { data: recipeData, error: recipeError } = await supabase
         .from("recipes")
-        .select("*");
+        .select("*")
+        .eq("status", "approved");
   
       if (!recipeError) {
         const formatted = {};
@@ -416,12 +420,15 @@ export default function Home() {
     const uniqueRecipes = Array.from(new Map(
       allMatchingRecipes.map((recipe) => [recipe.id, recipe])
     ).values());
-  
+
     if (uniqueRecipes.length === 0) {
-      setDebugMessage("❌ No matching recipes found.");
+      setNoRecipesFound(true);
+      setDebugMessage("");
       return;
     }
-  
+
+    setNoRecipesFound(false);
+
     const [suggestion] = getMealSuggestions({
       userRatings,
       globalRatings,
@@ -429,12 +436,22 @@ export default function Home() {
       selectedMoods,
       lastSuggestedId: Number(lastSuggestedId)
     });
-  
+
     if (!suggestion) {
-      setDebugMessage("❌ No suggestion returned from engine.");
+      setNoRecipesFound(true);
+      setDebugMessage("");
       return;
     }
-  
+
+    // Compute average rating for the suggested recipe
+    const recipeRatings = globalRatings.filter((r) => r.recipe_id === suggestion.id);
+    if (recipeRatings.length > 0) {
+      const avg = recipeRatings.reduce((sum, r) => sum + r.rating, 0) / recipeRatings.length;
+      setRecipeAvgRating(Math.round(avg * 10) / 10);
+    } else {
+      setRecipeAvgRating(null);
+    }
+
     localStorage.setItem("lastMealId", suggestion.id);
     setRecipe(suggestion);
     setMoodRating(0);
@@ -497,13 +514,23 @@ export default function Home() {
       <AnimatePresence>{showSaved && <SavedRecipes onClose={() => setShowSaved(false)} />}</AnimatePresence>
       {showRecipeCard && <NotificationPrompt />}
 
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 flex items-center gap-3">
         <button
           onClick={() => setShowSaved(true)}
           className="text-2xl leading-none"
           title="Saved recipes"
         >
           ❤️
+        </button>
+        <button
+          onClick={() => setShowFeed(true)}
+          className="flex items-center gap-1 bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition"
+          title="Today's Feed"
+        >
+          📸 Feed
+          {posts.length > 0 && (
+            <span className="bg-pink-500 text-white text-[10px] rounded-full px-1.5 py-0.5 ml-1">{posts.length}</span>
+          )}
         </button>
       </div>
       <div className="absolute top-4 right-4">
@@ -759,21 +786,39 @@ export default function Home() {
 
 
           <motion.button
-            // onClick={() => {
-            //   chimeSound.play();
-            //   handleMultiMoodSubmit();
-            // }}
             onClick={async () => {
               chimeSound.play();
               await handleMultiMoodSubmit();
             }}
-            className="mt-12 bg-pink-500 hover:bg-pink-600 text-white font-semibold py-6 px-12 rounded-full shadow-md transition"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 sm:static sm:mt-12 sm:translate-x-0 sm:left-auto sm:bottom-auto bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white font-semibold py-5 px-14 rounded-full shadow-xl transition"
             whileTap={{ scale: 0.97 }}
           >
-            Feed Me
+            Feed Me 🍴
           </motion.button>
         </>
       )}
+
+      <AnimatePresence>
+        {noRecipesFound && !showRecipeCard && (
+          <motion.div
+            key="no-recipes"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mt-8 w-full max-w-sm bg-white rounded-2xl shadow-lg p-6 text-center"
+          >
+            <div className="text-5xl mb-3">😕</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Rascal's stumped!</h3>
+            <p className="text-gray-500 text-sm mb-4">No recipes found for that vibe yet. Try a different mood or check back soon!</p>
+            <button
+              onClick={() => { setNoRecipesFound(false); setSelectedMoods([]); }}
+              className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-6 rounded-full transition"
+            >
+              Try another mood
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showSuggestionMessage && (
@@ -835,7 +880,12 @@ export default function Home() {
                 {savedIds.has(recipe.id) ? "❤️" : "🤍"}
               </button>
             </div>
-            <p className="text-gray-700 mb-4">{recipe.description}</p>
+            <p className="text-gray-700 mb-2">{recipe.description}</p>
+            {recipeAvgRating !== null && (
+              <p className="text-sm text-amber-500 mb-4">
+                {"⭐".repeat(Math.round(recipeAvgRating))} {recipeAvgRating.toFixed(1)} / 5
+              </p>
+            )}
             {recipe.ingredients && (
               <div className="text-left text-gray-800 mb-4">
                 <h3 className="font-semibold mb-1">🧂 Ingredients</h3>
@@ -858,6 +908,14 @@ export default function Home() {
                 onClick={() => {
                   setCookingMode(true);
                   setActiveStepIndex(0);
+                  // Save to cook history
+                  try {
+                    const raw = localStorage.getItem("fmf_cook_history");
+                    const history = raw ? JSON.parse(raw) : [];
+                    const entry = { id: recipe.id, name: recipe.name, emoji: recipe.emoji, cookedAt: new Date().toISOString() };
+                    const deduped = [entry, ...history.filter((h) => h.id !== recipe.id)].slice(0, 20);
+                    localStorage.setItem("fmf_cook_history", JSON.stringify(deduped));
+                  } catch {}
                 }}
                 whileTap={{ scale: 0.96 }}
                 className="mt-4 bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-xl shadow-sm transition"
@@ -920,27 +978,9 @@ export default function Home() {
               Array.isArray(recipe.ingredients)
                 ? recipe.ingredients
                 : JSON.parse(recipe.ingredients || "[]")
-            ).map((item, index) => {
-              const normalized = item
-                .toLowerCase()
-                .replace(/^(to serve|drizzle|handful|slice[ds]?|chopped|diced|sliced|crushed|peeled|minced|grated|halved|zest(ed)?|juice(d)?|large|small|medium|extra large|cloves?)\b/g, "")
-                .replace(/^[\d\/\s,.]+(g|kg|ml|l|oz|tblsp|tbsp|tsp|cup|tablespoons?|teaspoons?)?\s*/g, "")
-                .replace(/[^a-z\s]/g, "")
-                .replace(/\s+/g, " ")
-                .trim();
-
-              const price = ingredientPrices[normalized];
-              if (!price) {
-                console.log("🧐 Missing price for:", normalized);
-              }
-
-              return (
-                <li key={index}>
-                  {item} –{" "}
-                  {price !== undefined ? `£${price.toFixed(2)}` : "£N/A"}
-                </li>
-              );
-            })}
+            ).map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
 
 
             </ul>
