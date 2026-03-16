@@ -1,5 +1,6 @@
 "use client";
 import RascalSpaceGlide from "../components/RascalSpaceGlide";
+import toast from "react-hot-toast";
 
 export default function RascalGlidePage() {
   return (
@@ -7,7 +8,7 @@ export default function RascalGlidePage() {
       <h1 className="text-3xl font-bold mb-6 text-pink-600">🚀 Rascal Space Glide</h1>
       <RascalSpaceGlide
         secondsRemaining={30}
-        onTimeUp={() => alert("⏰ Time's up!")}
+        onTimeUp={() => toast("⏰ Time's up!", { icon: "🕹️" })}
       />
       <p className="mt-4 text-gray-500 text-sm">Use ← and → arrow keys to dodge!</p>
     </main>

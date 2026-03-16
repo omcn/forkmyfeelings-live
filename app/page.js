@@ -10,18 +10,18 @@ import { Howl } from "howler";
 
 import AuthForm from "./components/AuthForm";
 import EatOutSuggestions from "./components/EatOutSuggestion";
-import ingredientPrices from "../data/mockPrice";
 import RecipePostCapture from "./components/RecipePostCapture";
 import { supabase } from "../lib/supabaseClient";
 import { getMealSuggestions } from "../utils/mealSuggestionEngine";
 
 import Confetti from "react-confetti";
-import { useWindowSize } from "@uidotdev/usehooks"; // or your own width/height hook
-
-
-
+import { useWindowSize } from "@uidotdev/usehooks";
 import { mergeImages } from "../lib/mergeImages";
 import RascalSpaceGlide from "./components/RascalSpaceGlide";
+import Onboarding from "./components/Onboarding";
+import SavedRecipes from "./components/SavedRecipes";
+import NotificationPrompt from "./components/NotificationPrompt";
+import toast from "react-hot-toast";
 
 
 // import { motion } from "framer-motion";
@@ -103,6 +103,7 @@ function MoodTooltip({ label, children }) {
 
 export default function Home() {
   const [appLoading, setAppLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedMoods, setSelectedMoods] = useState([]);
   const [recipes, setRecipes] = useState({});
   const [recipe, setRecipe] = useState(null);
@@ -127,6 +128,15 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState(null);
   const [isTiming, setIsTiming] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  const [savedIds, setSavedIds] = useState(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = localStorage.getItem("fmf_saved_recipes");
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(arr.map((r) => r.id));
+    } catch { return new Set(); }
+  });
 
 
 
@@ -156,6 +166,23 @@ export default function Home() {
     } else {
       console.log("✅ Rating saved:", ratingValue);
     }
+  };
+
+  const toggleFavourite = (r) => {
+    if (!r?.id) return;
+    const raw = localStorage.getItem("fmf_saved_recipes");
+    const arr = raw ? JSON.parse(raw) : [];
+    const isSaved = savedIds.has(r.id);
+    let next;
+    if (isSaved) {
+      next = arr.filter((x) => x.id !== r.id);
+      toast("Removed from saved", { icon: "💔" });
+    } else {
+      next = [...arr, { id: r.id, name: r.name, emoji: r.emoji, description: r.description }];
+      toast.success("Saved! ❤️");
+    }
+    localStorage.setItem("fmf_saved_recipes", JSON.stringify(next));
+    setSavedIds(new Set(next.map((x) => x.id)));
   };
 
   // {showPostCapture && (
@@ -299,7 +326,12 @@ export default function Home() {
       const lastMood = localStorage.getItem("lastMood");
       if (lastMood) setSelectedMoods([lastMood]);
 
-      // 5. Animate mood buttons after a short delay
+      // 5. Show onboarding for first-time users
+      if (!localStorage.getItem("fmf_onboarded")) {
+        setShowOnboarding(true);
+      }
+
+      // 6. Animate mood buttons after a short delay
       setTimeout(() => {
         setReadyToShowMoods(true);
         setAppLoading(false);
@@ -461,6 +493,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12 text-center font-sans overflow-x-hidden">
+      {showOnboarding && <Onboarding onDone={() => setShowOnboarding(false)} />}
+      <AnimatePresence>{showSaved && <SavedRecipes onClose={() => setShowSaved(false)} />}</AnimatePresence>
+      {showRecipeCard && <NotificationPrompt />}
+
+      <div className="absolute top-4 left-4">
+        <button
+          onClick={() => setShowSaved(true)}
+          className="text-2xl leading-none"
+          title="Saved recipes"
+        >
+          ❤️
+        </button>
+      </div>
       <div className="absolute top-4 right-4">
         <button onClick={() => window.location.href = '/profile'}>
           <img
@@ -778,9 +823,18 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="mt-8 w-full max-w-md bg-white rounded-2xl shadow-xl p-6"
           >
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              {recipe.emoji} {recipe.name}
-            </h2>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <h2 className="text-2xl font-semibold text-gray-900">
+                {recipe.emoji} {recipe.name}
+              </h2>
+              <button
+                onClick={() => toggleFavourite(recipe)}
+                className="text-2xl shrink-0 transition-transform active:scale-125"
+                title={savedIds.has(recipe.id) ? "Remove from saved" : "Save recipe"}
+              >
+                {savedIds.has(recipe.id) ? "❤️" : "🤍"}
+              </button>
+            </div>
             <p className="text-gray-700 mb-4">{recipe.description}</p>
             {recipe.ingredients && (
               <div className="text-left text-gray-800 mb-4">

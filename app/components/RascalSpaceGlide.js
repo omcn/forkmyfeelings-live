@@ -183,6 +183,7 @@
 // export default RascalSpaceGlide;
 "use client";
 import { useEffect, useState, useRef } from "react";
+import toast from "react-hot-toast";
 
 const RascalSpaceGlide = ({ secondsRemaining = 60, onTimeUp }) => {
   const [rascalX, setRascalX] = useState(150);
@@ -207,7 +208,7 @@ const RascalSpaceGlide = ({ secondsRemaining = 60, onTimeUp }) => {
         if (response === "granted") {
           setTiltEnabled(true);
         } else {
-          alert("Permission denied. You can still use arrow keys!");
+          toast.error("Permission denied — use arrow keys instead");
         }
       } catch (err) {
         console.error("Tilt permission error:", err);

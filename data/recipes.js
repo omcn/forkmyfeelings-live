@@ -1,359 +1,747 @@
+// Recipes keyed by mood. Each mood has 5 unique, quality recipes.
+// These serve as local fallbacks; the live DB is the primary source.
+
 const recipes = {
-  "anxious": {
-    "name": "Microwave Mug Cake",
-    "steps": [
-      "Add flour, sugar, and cocoa powder to a mug.",
-      "Stir in milk and vegetable oil until smooth.",
-      "Microwave on high for 1 minute.",
-      "Let cool slightly and enjoy your cake straight from the mug."
-    ],
-    "emoji": "😰",
-    "description": "A perfect pick for when you're feeling anxious. Microwave Mug Cake to the rescue!"
-  },
-  "tired": {
-    "name": "Peanut Butter Fudge",
-    "steps": [
-      "In a saucepan, combine peanut butter and butter.",
-      "Stir over low heat until melted and smooth.",
-      "Add powdered sugar and vanilla extract.",
-      "Mix until well combined, then press into a pan.",
-      "Refrigerate until firm and cut into squares."
-    ],
-    "emoji": "😴",
-    "description": "A perfect pick for when you're feeling tired. Peanut Butter Fudge to the rescue!"
-  },
-  "happy": {
-    "name": "Mini Pancake Stack",
-    "steps": [
-      "In a bowl, mix flour, baking powder, and sugar.",
-      "Add milk and egg, then whisk until smooth.",
-      "Pour small circles of batter onto a hot griddle.",
-      "Flip when bubbles form and cook until golden.",
-      "Stack and drizzle with syrup or toppings of choice."
-    ],
-    "emoji": "😊",
-    "description": "A perfect pick for when you're feeling happy. Mini Pancake Stack to the rescue!"
-  },
-  "sad": {
-    "name": "DIY Smoothie Bowl",
-    "steps": [
-      "Blend frozen fruit with yogurt and a splash of milk.",
-      "Pour into a bowl for a thick, smoothie-like texture.",
-      "Top with granola, nuts, and fresh fruit.",
-      "Add seeds or honey for extra flavor.",
-      "Serve chilled and enjoy with a spoon."
-    ],
-    "emoji": "😢",
-    "description": "A perfect pick for when you're feeling sad. DIY Smoothie Bowl to the rescue!"
-  },
-  "angry": {
-    "name": "Avocado Egg Toast",
-    "steps": [
-      "Toast your bread until golden.",
-      "Mash avocado with salt, pepper, and lemon juice.",
-      "Spread avocado on the toast.",
-      "Top with a fried or poached egg.",
-      "Sprinkle with chili flakes or herbs."
-    ],
-    "emoji": "😠",
-    "description": "A perfect pick for when you're feeling angry. Avocado Egg Toast to the rescue!"
-  },
-  "lonely": {
-    "name": "Toast Platter",
-    "steps": [
-      "Toast 2–3 slices of your favorite bread.",
-      "Add a variety of spreads: jam, peanut butter, cream cheese.",
-      "Layer toppings: fruits, nuts, or chocolate shavings.",
-      "Arrange creatively on a plate.",
-      "Serve with tea or coffee for cozy vibes."
-    ],
-    "emoji": "😔",
-    "description": "A perfect pick for when you're feeling lonely. Toast Platter to the rescue!"
-  },
-  "jealous": {
-    "name": "Golden Turmeric Latte",
-    "steps": [
-      "Heat milk in a saucepan over medium heat.",
-      "Whisk in turmeric, cinnamon, and black pepper.",
-      "Simmer gently for 5 minutes.",
-      "Remove from heat and stir in sweetener.",
-      "Pour into a mug and sprinkle cinnamon on top."
-    ],
-    "emoji": "😒",
-    "description": "A perfect pick for when you're feeling jealous. Golden Turmeric Latte to the rescue!"
-  },
-  "excited": {
-    "name": "Fruit Skewers",
-    "steps": [
-      "Chop a variety of fruits: melon, grapes, strawberries.",
-      "Slide onto skewers in colorful patterns.",
-      "Optional: drizzle with yogurt or honey.",
-      "Chill in the fridge for 10–15 minutes.",
-      "Serve as a fun, healthy snack."
-    ],
-    "emoji": "🤩",
-    "description": "A perfect pick for when you're feeling excited. Fruit Skewers to the rescue!"
-  },
-  "grateful": {
-    "name": "Funfetti Cupcakes",
-    "steps": [
-      "Preheat oven to 350°F (175°C).",
-      "Mix cake batter and stir in rainbow sprinkles.",
-      "Pour into cupcake liners.",
-      "Bake for 15–18 minutes.",
-      "Cool and frost with colorful icing."
-    ],
-    "emoji": "🙏",
-    "description": "A perfect pick for when you're feeling grateful. Funfetti Cupcakes to the rescue!"
-  },
-  "overwhelmed": {
-    "name": "Chocolate Lava Cake",
-    "steps": [
-      "Preheat oven and butter your ramekins.",
-      "Melt chocolate and butter together.",
-      "Whisk eggs, sugar, and mix with melted chocolate.",
-      "Pour into ramekins and bake until edges are set.",
-      "Invert, serve warm, and let the center flow!"
-    ],
-    "emoji": "😵‍💫",
-    "description": "A perfect pick for when you're feeling overwhelmed. Chocolate Lava Cake to the rescue!"
-  },
-  "breakup": {
-    "name": "Sparkling Mocktail",
-    "steps": [
-      "Add ice to a tall glass.",
-      "Mix fruit juice and sparkling water.",
-      "Add sliced citrus and mint leaves.",
-      "Stir gently and serve chilled.",
-      "Perfect for a refreshing non-alcoholic treat."
-    ],
-    "emoji": "💔",
-    "description": "A perfect pick for when you're feeling breakup. Sparkling Mocktail to the rescue!"
-  },
-  "bored": {
-    "name": "Microwave Mug Cake",
-    "steps": [
-      "Add flour, sugar, and cocoa powder to a mug.",
-      "Stir in milk and vegetable oil until smooth.",
-      "Microwave on high for 1 minute.",
-      "Let cool slightly and enjoy your cake straight from the mug."
-    ],
-    "emoji": "😐",
-    "description": "A perfect pick for when you're feeling bored. Microwave Mug Cake to the rescue!"
-  },
-  "celebrating": {
-    "name": "Mini Pancake Stack",
-    "steps": [
-      "In a bowl, mix flour, baking powder, and sugar.",
-      "Add milk and egg, then whisk until smooth.",
-      "Pour small circles of batter onto a hot griddle.",
-      "Flip when bubbles form and cook until golden.",
-      "Stack and drizzle with syrup or toppings of choice."
-    ],
-    "emoji": "🥳",
-    "description": "A perfect pick for when you're feeling celebrating. Mini Pancake Stack to the rescue!"
-  },
-  "working": {
-    "name": "Golden Turmeric Latte",
-    "steps": [
-      "Heat milk in a saucepan over medium heat.",
-      "Whisk in turmeric, cinnamon, and black pepper.",
-      "Simmer gently for 5 minutes.",
-      "Remove from heat and stir in sweetener.",
-      "Pour into a mug and sprinkle cinnamon on top."
-    ],
-    "emoji": "💼",
-    "description": "A perfect pick for when you're feeling working. Golden Turmeric Latte to the rescue!"
-  },
-  "studying": {
-    "name": "Microwave Mug Cake",
-    "steps": [
-      "Add flour, sugar, and cocoa powder to a mug.",
-      "Stir in milk and vegetable oil until smooth.",
-      "Microwave on high for 1 minute.",
-      "Let cool slightly and enjoy your cake straight from the mug."
-    ],
-    "emoji": "📚",
-    "description": "A perfect pick for when you're feeling studying. Microwave Mug Cake to the rescue!"
-  },
-  "raining": {
-    "name": "Creamy Mac & Cheese",
-    "steps": [
-      "Boil macaroni until al dente and drain.",
-      "Melt butter in a saucepan, add flour for a roux.",
-      "Whisk in milk and stir until thickened.",
-      "Add shredded cheese and mix to melt.",
-      "Combine with pasta and serve hot."
-    ],
-    "emoji": "🌧️",
-    "description": "A perfect pick for when you're feeling raining. Creamy Mac & Cheese to the rescue!"
-  },
-  "sunny": {
-    "name": "Cinnamon Rolls",
-    "steps": [
-      "Prepare dough and roll into a rectangle.",
-      "Spread butter, sugar, and cinnamon.",
-      "Roll up and slice into rolls.",
-      "Place in pan and let rise, then bake.",
-      "Frost warm rolls with cream cheese glaze."
-    ],
-    "emoji": "☀️",
-    "description": "A perfect pick for when you're feeling sunny. Cinnamon Rolls to the rescue!"
-  },
-  "hungover": {
-    "name": "DIY Smoothie Bowl",
-    "steps": [
-      "Blend frozen fruit with yogurt and a splash of milk.",
-      "Pour into a bowl for a thick, smoothie-like texture.",
-      "Top with granola, nuts, and fresh fruit.",
-      "Add seeds or honey for extra flavor.",
-      "Serve chilled and enjoy with a spoon."
-    ],
-    "emoji": "🤕",
-    "description": "A perfect pick for when you're feeling hungover. DIY Smoothie Bowl to the rescue!"
-  },
-  "traveling": {
-    "name": "Loaded Nachos",
-    "steps": [
-      "Preheat oven and arrange tortilla chips on a tray.",
-      "Layer with cheese, beans, and toppings.",
-      "Bake until cheese is melted.",
-      "Top with salsa, sour cream, and avocado.",
-      "Serve hot with lime wedges."
-    ],
-    "emoji": "✈️",
-    "description": "A perfect pick for when you're feeling traveling. Loaded Nachos to the rescue!"
-  },
-  "date-night": {
-    "name": "Creamy Mac & Cheese",
-    "steps": [
-      "Boil macaroni until al dente and drain.",
-      "Melt butter in a saucepan, add flour for a roux.",
-      "Whisk in milk and stir until thickened.",
-      "Add shredded cheese and mix to melt.",
-      "Combine with pasta and serve hot."
-    ],
-    "emoji": "💘",
-    "description": "A perfect pick for when you're feeling date-night. Creamy Mac & Cheese to the rescue!"
-  },
-  "lazy": {
-    "name": "DIY Smoothie Bowl",
-    "steps": [
-      "Blend frozen fruit with yogurt and a splash of milk.",
-      "Pour into a bowl for a thick, smoothie-like texture.",
-      "Top with granola, nuts, and fresh fruit.",
-      "Add seeds or honey for extra flavor.",
-      "Serve chilled and enjoy with a spoon."
-    ],
-    "emoji": "🛋️",
-    "description": "A perfect pick for when you're feeling lazy. DIY Smoothie Bowl to the rescue!"
-  },
-  "energetic": {
-    "name": "Microwave Mug Cake",
-    "steps": [
-      "Add flour, sugar, and cocoa powder to a mug.",
-      "Stir in milk and vegetable oil until smooth.",
-      "Microwave on high for 1 minute.",
-      "Let cool slightly and enjoy your cake straight from the mug."
-    ],
-    "emoji": "⚡",
-    "description": "A perfect pick for when you're feeling energetic. Microwave Mug Cake to the rescue!"
-  },
-  "restless": {
-    "name": "DIY Smoothie Bowl",
-    "steps": [
-      "Blend frozen fruit with yogurt and a splash of milk.",
-      "Pour into a bowl for a thick, smoothie-like texture.",
-      "Top with granola, nuts, and fresh fruit.",
-      "Add seeds or honey for extra flavor.",
-      "Serve chilled and enjoy with a spoon."
-    ],
-    "emoji": "🌀",
-    "description": "A perfect pick for when you're feeling restless. DIY Smoothie Bowl to the rescue!"
-  },
-  "focused": {
-    "name": "Cinnamon Rolls",
-    "steps": [
-      "Prepare dough and roll into a rectangle.",
-      "Spread butter, sugar, and cinnamon.",
-      "Roll up and slice into rolls.",
-      "Place in pan and let rise, then bake.",
-      "Frost warm rolls with cream cheese glaze."
-    ],
-    "emoji": "🎯",
-    "description": "A perfect pick for when you're feeling focused. Cinnamon Rolls to the rescue!"
-  },
-  "burnt-out": {
-    "name": "Microwave Mug Cake",
-    "steps": [
-      "Add flour, sugar, and cocoa powder to a mug.",
-      "Stir in milk and vegetable oil until smooth.",
-      "Microwave on high for 1 minute.",
-      "Let cool slightly and enjoy your cake straight from the mug."
-    ],
-    "emoji": "🔥",
-    "description": "A perfect pick for when you're feeling burnt-out. Microwave Mug Cake to the rescue!"
-  },
-  "motivated": {
-    "name": "Instant Ramen Upgrade",
-    "steps": [
-      "Cook ramen noodles as directed.",
-      "Add an egg, veggies, and sauces.",
-      "Simmer for 2–3 minutes.",
-      "Pour into a bowl and garnish with herbs.",
-      "Enjoy your gourmet-style upgrade."
-    ],
-    "emoji": "🏃",
-    "description": "A perfect pick for when you're feeling motivated. Instant Ramen Upgrade to the rescue!"
-  },
-  "wired": {
-    "name": "Grilled Cheese Sandwich",
-    "steps": [
-      "Butter two slices of bread.",
-      "Place cheese between them.",
-      "Grill in a pan until golden and melted.",
-      "Flip and toast both sides evenly.",
-      "Serve with tomato soup for comfort."
-    ],
-    "emoji": "😳",
-    "description": "A perfect pick for when you're feeling wired. Grilled Cheese Sandwich to the rescue!"
-  },
-  "calm": {
-    "name": "Herbal Tea",
-    "steps": [
-      "Boil water in a kettle.",
-      "Steep herbal tea bag or loose leaf in cup.",
-      "Cover and let steep for 5–7 minutes.",
-      "Add honey or lemon if desired.",
-      "Sip slowly and relax."
-    ],
-    "emoji": "🧘",
-    "description": "A perfect pick for when you're feeling calm. Herbal Tea to the rescue!"
-  },
-  "chill": {
-    "name": "Fruit Skewers",
-    "steps": [
-      "Chop a variety of fruits: melon, grapes, strawberries.",
-      "Slide onto skewers in colorful patterns.",
-      "Optional: drizzle with yogurt or honey.",
-      "Chill in the fridge for 10–15 minutes.",
-      "Serve as a fun, healthy snack."
-    ],
-    "emoji": "🧊",
-    "description": "A perfect pick for when you're feeling chill. Fruit Skewers to the rescue!"
-  },
-  "exhausted": {
-    "name": "DIY Smoothie Bowl",
-    "steps": [
-      "Blend frozen fruit with yogurt and a splash of milk.",
-      "Pour into a bowl for a thick, smoothie-like texture.",
-      "Top with granola, nuts, and fresh fruit.",
-      "Add seeds or honey for extra flavor.",
-      "Serve chilled and enjoy with a spoon."
-    ],
-    "emoji": "🥱",
-    "description": "A perfect pick for when you're feeling exhausted. DIY Smoothie Bowl to the rescue!"
-  }
+
+  // ─── TIRED ──────────────────────────────────────────────────────────────────
+  tired: [
+    {
+      id: "tired-1",
+      name: "Creamy Tomato Soup",
+      emoji: "🍅",
+      description: "Silky, warming and made in one pot. Pour, simmer, done.",
+      ingredients: ["1 tin chopped tomatoes", "1 onion", "2 garlic cloves", "200ml cream", "500ml veg stock", "1 tsp sugar", "Salt & pepper", "Crusty bread to serve"],
+      steps: [
+        "Fry diced onion and garlic in a little oil until soft, about 5 min.",
+        "Pour in tomatoes, stock, and sugar. Simmer 15 minutes.",
+        "Blend smooth with a stick blender.",
+        "Stir in cream and season well.",
+        "Serve with crusty bread for dunking.",
+      ],
+    },
+    {
+      id: "tired-2",
+      name: "Egg Fried Rice",
+      emoji: "🍳",
+      description: "Leftover rice transformed into something magical in under 10 minutes.",
+      ingredients: ["2 cups cooked rice", "2 eggs", "2 tbsp soy sauce", "1 tsp sesame oil", "2 spring onions", "Frozen peas", "Garlic"],
+      steps: [
+        "Heat oil in a wok or large pan on high heat.",
+        "Add garlic, stir for 30 seconds.",
+        "Push to the side and scramble the eggs.",
+        "Add rice and break up any clumps.",
+        "Stir in peas, soy sauce, and sesame oil. Top with spring onions.",
+      ],
+    },
+    {
+      id: "tired-3",
+      name: "Honey Garlic Noodles",
+      emoji: "🍜",
+      description: "5-ingredient sauce, ready before you've stopped yawning.",
+      ingredients: ["150g noodles", "3 tbsp soy sauce", "2 tbsp honey", "3 garlic cloves (minced)", "1 tbsp butter", "Sesame seeds (optional)"],
+      steps: [
+        "Cook noodles per packet instructions, reserve a little water.",
+        "In the same pot, melt butter and fry garlic 1 min.",
+        "Add soy sauce and honey, stir to combine.",
+        "Toss noodles in the sauce, add a splash of pasta water to loosen.",
+        "Top with sesame seeds and serve immediately.",
+      ],
+    },
+    {
+      id: "tired-4",
+      name: "Sheet Pan Sausages & Veg",
+      emoji: "🌭",
+      description: "Chuck it all on a tray. The oven does the work while you rest.",
+      ingredients: ["4–6 sausages", "2 peppers", "1 courgette", "1 red onion", "2 tbsp olive oil", "1 tsp paprika", "Salt & pepper"],
+      steps: [
+        "Preheat oven to 200°C.",
+        "Chop all veg into chunks and spread on a baking tray.",
+        "Nestle the sausages in, drizzle with oil and paprika.",
+        "Roast 30–35 minutes, turning once halfway.",
+        "Eat straight from the tray.",
+      ],
+    },
+    {
+      id: "tired-5",
+      name: "Peanut Butter Banana Toast",
+      emoji: "🥜",
+      description: "Two minutes, zero cooking, maximum comfort.",
+      ingredients: ["2 slices thick bread", "3 tbsp peanut butter", "1 banana", "1 tsp honey", "Pinch of cinnamon"],
+      steps: [
+        "Toast the bread to your liking.",
+        "Spread generously with peanut butter.",
+        "Slice banana and lay on top.",
+        "Drizzle with honey and a pinch of cinnamon.",
+        "Eat immediately, preferably horizontal on the sofa.",
+      ],
+    },
+  ],
+
+  // ─── HAPPY ──────────────────────────────────────────────────────────────────
+  happy: [
+    {
+      id: "happy-1",
+      name: "Rainbow Veggie Tacos",
+      emoji: "🌮",
+      description: "Colourful, crunchy, and fun to build. Good food for good vibes.",
+      ingredients: ["6 small tortillas", "1 tin black beans", "2 peppers", "1 avocado", "Red cabbage", "Lime", "Sour cream", "Cheddar cheese", "Cumin, garlic powder"],
+      steps: [
+        "Warm tortillas in a dry pan or microwave.",
+        "Season beans with cumin and garlic powder, heat through.",
+        "Slice peppers, shred cabbage, dice avocado.",
+        "Layer beans, peppers, cabbage, and avocado in each tortilla.",
+        "Finish with cheese, sour cream and a squeeze of lime.",
+      ],
+    },
+    {
+      id: "happy-2",
+      name: "Mini Pancake Stack",
+      emoji: "🥞",
+      description: "Fluffy, golden stacks dripping in syrup. Pure happiness.",
+      ingredients: ["150g plain flour", "2 tsp baking powder", "1 tbsp sugar", "1 egg", "200ml milk", "Butter for frying", "Maple syrup, berries to serve"],
+      steps: [
+        "Whisk flour, baking powder, and sugar together.",
+        "Add egg and milk, whisk to a smooth batter.",
+        "Heat a little butter in a frying pan over medium heat.",
+        "Pour tablespoon-sized circles and cook until bubbles form, then flip.",
+        "Stack high and drown in maple syrup with fresh berries.",
+      ],
+    },
+    {
+      id: "happy-3",
+      name: "Loaded Nachos",
+      emoji: "🧀",
+      description: "Pile everything on and share with people you like.",
+      ingredients: ["200g tortilla chips", "150g grated cheddar", "1 tin black beans", "1 jalapeño", "Sour cream", "Salsa", "1 avocado"],
+      steps: [
+        "Preheat oven to 200°C.",
+        "Spread chips on an oven-proof dish.",
+        "Scatter beans and cheese all over.",
+        "Bake 10–12 minutes until cheese is melted and golden.",
+        "Top with jalapeños, salsa, sour cream and smashed avocado.",
+      ],
+    },
+    {
+      id: "happy-4",
+      name: "Homemade Pizza",
+      emoji: "🍕",
+      description: "Make it messy, make it yours. Best eaten with company.",
+      ingredients: ["Pizza base or naan", "4 tbsp tomato sauce", "100g mozzarella", "Toppings of your choice", "Oregano", "Olive oil"],
+      steps: [
+        "Preheat oven to its highest setting (220–240°C).",
+        "Spread tomato sauce over the base.",
+        "Tear mozzarella and scatter on top.",
+        "Add your favourite toppings.",
+        "Bake 10–15 minutes until bubbling and crispy at the edges.",
+      ],
+    },
+    {
+      id: "happy-5",
+      name: "Fruit Skewers with Yoghurt Dip",
+      emoji: "🍓",
+      description: "Simple, vibrant, and honestly just fun to eat.",
+      ingredients: ["Strawberries", "Pineapple chunks", "Grapes", "Melon", "200g Greek yoghurt", "2 tbsp honey", "½ tsp vanilla extract"],
+      steps: [
+        "Chop all fruit into bite-size pieces.",
+        "Thread onto skewers in colourful order.",
+        "Mix yoghurt with honey and vanilla.",
+        "Chill skewers in the fridge for 15 minutes.",
+        "Serve with the yoghurt dip on the side.",
+      ],
+    },
+  ],
+
+  // ─── SAD ────────────────────────────────────────────────────────────────────
+  sad: [
+    {
+      id: "sad-1",
+      name: "Mac & Cheese",
+      emoji: "🧀",
+      description: "The original hug in a bowl. Proper cheesy, properly comforting.",
+      ingredients: ["200g macaroni", "30g butter", "30g plain flour", "500ml milk", "100g mature cheddar", "50g gruyère", "Salt, pepper, pinch of nutmeg"],
+      steps: [
+        "Cook macaroni until just al dente, drain.",
+        "Melt butter, add flour and stir for 2 minutes.",
+        "Gradually whisk in milk until smooth and thick.",
+        "Remove from heat, stir in both cheeses until melted.",
+        "Combine with pasta, season, and eat directly from the pot.",
+      ],
+    },
+    {
+      id: "sad-2",
+      name: "Chocolate Mug Cake",
+      emoji: "🍫",
+      description: "When you need chocolate and you need it in 90 seconds.",
+      ingredients: ["4 tbsp self-raising flour", "4 tbsp sugar", "2 tbsp cocoa powder", "1 egg", "3 tbsp milk", "3 tbsp vegetable oil", "Splash of vanilla"],
+      steps: [
+        "Add all dry ingredients to a large mug and mix.",
+        "Crack in the egg and stir well.",
+        "Add milk, oil, and vanilla. Mix until smooth.",
+        "Microwave on full power for 60–90 seconds.",
+        "Eat with a spoon straight from the mug.",
+      ],
+    },
+    {
+      id: "sad-3",
+      name: "Golden Chicken Noodle Soup",
+      emoji: "🍲",
+      description: "A bowl of this genuinely helps. Science says so. (Probably.)",
+      ingredients: ["1 chicken breast", "1 litre chicken stock", "2 carrots", "2 celery stalks", "1 onion", "80g egg noodles", "Parsley", "Salt & pepper"],
+      steps: [
+        "Bring stock to a gentle boil in a large pot.",
+        "Add diced onion, sliced carrots and celery.",
+        "Simmer 10 minutes, then add the chicken breast whole.",
+        "Cook 15–20 minutes until chicken is cooked through. Remove and shred.",
+        "Return chicken, add noodles, cook 3 more minutes. Season and add parsley.",
+      ],
+    },
+    {
+      id: "sad-4",
+      name: "Cheesy Scrambled Eggs on Toast",
+      emoji: "🍳",
+      description: "Soft, slow-cooked eggs with cheese. Simple things done right.",
+      ingredients: ["3 eggs", "30ml milk or cream", "20g butter", "30g cheddar", "2 slices thick bread", "Salt & pepper", "Chives (optional)"],
+      steps: [
+        "Toast the bread.",
+        "Whisk eggs with milk, salt and pepper.",
+        "Melt butter in a non-stick pan on LOW heat.",
+        "Add eggs and stir constantly with a spatula for 3–4 minutes.",
+        "Remove from heat while still slightly runny, stir in cheese, pile on toast.",
+      ],
+    },
+    {
+      id: "sad-5",
+      name: "Banana Ice Cream",
+      emoji: "🍌",
+      description: "Frozen bananas whipped into something that feels like cheating.",
+      ingredients: ["3 ripe bananas", "2 tbsp peanut butter", "1 tbsp honey", "Pinch of cinnamon"],
+      steps: [
+        "Peel and slice bananas, freeze for at least 2 hours.",
+        "Blend frozen banana chunks until smooth and creamy.",
+        "Add peanut butter and honey, blend again.",
+        "Eat immediately as soft-serve or freeze 30 mins for a firmer texture.",
+        "Top with a little cinnamon.",
+      ],
+    },
+  ],
+
+  // ─── RUSHED ─────────────────────────────────────────────────────────────────
+  rushed: [
+    {
+      id: "rushed-1",
+      name: "5-Minute Quesadilla",
+      emoji: "🫓",
+      description: "Tortilla + cheese + heat. Fast, filling, zero fuss.",
+      ingredients: ["2 flour tortillas", "80g grated cheddar", "1 tbsp salsa (optional)", "Butter"],
+      steps: [
+        "Heat a frying pan over medium-high.",
+        "Place one tortilla flat, scatter cheese on half.",
+        "Fold over and press down with a spatula.",
+        "Cook 1–2 minutes each side until golden and melted.",
+        "Slice into wedges and eat standing up if needed.",
+      ],
+    },
+    {
+      id: "rushed-2",
+      name: "Avocado Toast",
+      emoji: "🥑",
+      description: "Ready in the time it takes to make a coffee.",
+      ingredients: ["2 slices sourdough", "1 ripe avocado", "½ lemon", "Salt, pepper", "Chilli flakes", "1 egg (optional)"],
+      steps: [
+        "Toast the bread.",
+        "Mash avocado with lemon juice, salt and pepper.",
+        "Spread generously on toast.",
+        "Top with chilli flakes.",
+        "Fry or poach an egg on top if you have 3 more minutes.",
+      ],
+    },
+    {
+      id: "rushed-3",
+      name: "Greek Yoghurt & Granola Bowl",
+      emoji: "🥣",
+      description: "No cooking. Just stack, drizzle, go.",
+      ingredients: ["200g Greek yoghurt", "4 tbsp granola", "Handful of berries", "1 tbsp honey", "Chia seeds (optional)"],
+      steps: [
+        "Spoon yoghurt into a bowl.",
+        "Top with granola and berries.",
+        "Drizzle honey over everything.",
+        "Scatter chia seeds if you have them.",
+        "Done in 90 seconds.",
+      ],
+    },
+    {
+      id: "rushed-4",
+      name: "Caprese Wrap",
+      emoji: "🥙",
+      description: "No heat needed. Grab and go.",
+      ingredients: ["1 large tortilla wrap", "125g mozzarella", "2 tomatoes", "Fresh basil", "Balsamic glaze", "Salt & pepper"],
+      steps: [
+        "Lay the wrap flat.",
+        "Slice mozzarella and tomatoes, arrange on the wrap.",
+        "Tear basil leaves over the top.",
+        "Drizzle with balsamic glaze, season well.",
+        "Wrap tightly, cut in half, eat on the move.",
+      ],
+    },
+    {
+      id: "rushed-5",
+      name: "Tinned Tuna Pasta",
+      emoji: "🐟",
+      description: "Cupboard staples into a proper meal in 12 minutes flat.",
+      ingredients: ["150g pasta", "1 tin tuna", "3 tbsp mayo", "1 tbsp lemon juice", "Sweetcorn (tin)", "Salt & pepper", "Parsley"],
+      steps: [
+        "Boil pasta according to packet, drain.",
+        "Mix tuna, mayo, lemon juice and sweetcorn in a bowl.",
+        "Toss with the warm pasta.",
+        "Season, add parsley if you have it.",
+        "Eat immediately or pack in a container.",
+      ],
+    },
+  ],
+
+  // ─── DATE-NIGHT ─────────────────────────────────────────────────────────────
+  "date-night": [
+    {
+      id: "date-1",
+      name: "Garlic Butter Prawns",
+      emoji: "🦐",
+      description: "Impressive, quick, and eaten with fingers. Sets the right tone.",
+      ingredients: ["300g king prawns (raw)", "4 garlic cloves", "60g butter", "1 red chilli", "Parsley", "1 lemon", "Crusty bread"],
+      steps: [
+        "Melt butter in a wide pan over medium-high heat.",
+        "Add minced garlic and sliced chilli, sizzle 1 minute.",
+        "Add prawns in a single layer, cook 2 min each side until pink.",
+        "Squeeze over lemon juice and scatter parsley.",
+        "Serve immediately with bread to mop up the butter.",
+      ],
+    },
+    {
+      id: "date-2",
+      name: "Mushroom Risotto",
+      emoji: "🍄",
+      description: "Takes attention but rewards with something genuinely romantic.",
+      ingredients: ["300g arborio rice", "200g mixed mushrooms", "1 onion", "3 garlic cloves", "150ml white wine", "1.2 litres warm veg stock", "60g parmesan", "30g butter", "Truffle oil (optional)"],
+      steps: [
+        "Fry onion and garlic in butter until soft. Add rice, stir 2 minutes.",
+        "Pour in wine, stir until absorbed.",
+        "Add stock one ladle at a time, stirring between each addition.",
+        "Meanwhile fry mushrooms separately until golden.",
+        "Stir in mushrooms, parmesan and a drizzle of truffle oil. Rest 2 minutes before serving.",
+      ],
+    },
+    {
+      id: "date-3",
+      name: "Salmon en Papillote",
+      emoji: "🐟",
+      description: "Steam in a parcel — elegant, healthy, and very little washing up.",
+      ingredients: ["2 salmon fillets", "1 lemon", "2 garlic cloves", "Handful of asparagus", "2 tbsp olive oil", "Fresh dill", "Salt & pepper"],
+      steps: [
+        "Preheat oven to 200°C.",
+        "Cut two large squares of baking paper.",
+        "Place asparagus on each, top with a salmon fillet.",
+        "Slice garlic and lemon thinly over each piece. Drizzle with oil, season, add dill.",
+        "Fold into a parcel, seal edges tightly. Bake 18–20 minutes.",
+      ],
+    },
+    {
+      id: "date-4",
+      name: "Chocolate Fondant",
+      emoji: "🍫",
+      description: "The classic dessert with the molten centre. Worth every minute.",
+      ingredients: ["100g dark chocolate", "100g butter", "3 eggs + 2 yolks", "100g sugar", "50g plain flour", "Cocoa powder (for dusting)", "Vanilla ice cream to serve"],
+      steps: [
+        "Melt chocolate and butter together, cool slightly.",
+        "Whisk eggs, yolks and sugar until pale, then fold in chocolate.",
+        "Fold in flour until just combined.",
+        "Pour into buttered, cocoa-dusted ramekins. Refrigerate up to 24 hours.",
+        "Bake at 200°C for exactly 12 minutes. Turn out and serve with ice cream.",
+      ],
+    },
+    {
+      id: "date-5",
+      name: "Spaghetti Aglio e Olio",
+      emoji: "🍝",
+      description: "Three ingredients, one pan, dinner in 20 minutes. Classy.",
+      ingredients: ["200g spaghetti", "6 garlic cloves", "6 tbsp good olive oil", "Pinch of chilli flakes", "Large handful of parsley", "Salt", "Parmesan to finish"],
+      steps: [
+        "Cook spaghetti in heavily salted boiling water. Reserve 1 cup pasta water.",
+        "While pasta cooks, thinly slice garlic.",
+        "Warm olive oil in a wide pan, add garlic on LOW heat until just golden — don't burn.",
+        "Add chilli flakes, then drained pasta and a splash of pasta water.",
+        "Toss vigorously, add parsley, serve with parmesan.",
+      ],
+    },
+  ],
+
+  // ─── CHILL ──────────────────────────────────────────────────────────────────
+  chill: [
+    {
+      id: "chill-1",
+      name: "Shakshuka",
+      emoji: "🍳",
+      description: "Eggs poached in spiced tomato sauce. Lazy weekend in a pan.",
+      ingredients: ["1 tin chopped tomatoes", "2 peppers", "1 onion", "3 garlic cloves", "4 eggs", "1 tsp cumin", "1 tsp smoked paprika", "Feta", "Fresh coriander", "Crusty bread"],
+      steps: [
+        "Fry onion and peppers in oil until soft, about 8 minutes.",
+        "Add garlic, cumin and paprika. Cook 1 minute.",
+        "Pour in tomatoes, simmer 10 minutes until thickened.",
+        "Make wells in the sauce, crack in eggs.",
+        "Cover and cook 5–7 minutes until whites are set. Crumble feta, add coriander. Serve with bread.",
+      ],
+    },
+    {
+      id: "chill-2",
+      name: "Hummus & Flatbread",
+      emoji: "🫓",
+      description: "Make your own hummus — it's genuinely 5 minutes and miles better.",
+      ingredients: ["1 tin chickpeas", "3 tbsp tahini", "2 garlic cloves", "2 lemons", "4 tbsp olive oil", "Salt", "Smoked paprika", "Shop-bought flatbreads"],
+      steps: [
+        "Drain chickpeas, reserve the liquid.",
+        "Blend chickpeas, tahini, garlic, lemon juice and oil until smooth.",
+        "Add a splash of chickpea water if needed to loosen.",
+        "Season generously.",
+        "Serve in a bowl, drizzle with oil and a dusting of smoked paprika. Warm the flatbreads.",
+      ],
+    },
+    {
+      id: "chill-3",
+      name: "Slow Cooker Dhal",
+      emoji: "🥣",
+      description: "Set it in the morning, eat something glorious in the evening.",
+      ingredients: ["300g red lentils", "1 tin coconut milk", "1 tin chopped tomatoes", "1 onion", "4 garlic cloves", "1 tbsp fresh ginger", "2 tsp curry powder", "1 tsp turmeric", "Salt", "Fresh coriander"],
+      steps: [
+        "Rinse lentils well.",
+        "Add everything except coriander to the slow cooker.",
+        "Cook on LOW for 6–8 hours or HIGH for 3–4.",
+        "Stir well — lentils will have dissolved into a thick dhal.",
+        "Season, top with coriander, serve with rice or naan.",
+      ],
+    },
+    {
+      id: "chill-4",
+      name: "Baked Camembert",
+      emoji: "🧀",
+      description: "Ten minutes, one cheese, total crowd pleaser.",
+      ingredients: ["1 whole camembert in box", "2 garlic cloves", "Fresh rosemary", "2 tbsp honey", "Crackers and bread to serve"],
+      steps: [
+        "Preheat oven to 180°C.",
+        "Score the top of the camembert in a cross-hatch.",
+        "Tuck slivers of garlic and small rosemary sprigs into the cuts.",
+        "Drizzle with honey.",
+        "Bake in its box 15–18 minutes until melted through. Serve immediately with crackers.",
+      ],
+    },
+    {
+      id: "chill-5",
+      name: "Golden Turmeric Latte",
+      emoji: "☕",
+      description: "Warming, anti-inflammatory, and actually delicious.",
+      ingredients: ["400ml oat milk", "1 tsp turmeric", "½ tsp cinnamon", "¼ tsp ginger powder", "Pinch of black pepper", "1 tbsp honey", "½ tsp vanilla"],
+      steps: [
+        "Heat oat milk in a small saucepan over medium heat.",
+        "Whisk in turmeric, cinnamon, ginger, and black pepper.",
+        "Simmer gently 5 minutes — don't boil.",
+        "Remove from heat, stir in honey and vanilla.",
+        "Pour into a mug through a sieve. Sprinkle a little cinnamon on top.",
+      ],
+    },
+  ],
+
+  // ─── RECOVERING ─────────────────────────────────────────────────────────────
+  recovering: [
+    {
+      id: "recovering-1",
+      name: "Electrolyte Smoothie",
+      emoji: "🥤",
+      description: "Banana, coconut water and honey. Nature's recovery drink.",
+      ingredients: ["2 bananas", "300ml coconut water", "1 tbsp honey", "Handful of spinach", "1 tbsp peanut butter", "Pinch of salt"],
+      steps: [
+        "Peel bananas (can be frozen for a thicker smoothie).",
+        "Add all ingredients to a blender.",
+        "Blend until smooth.",
+        "Taste and add more honey if needed.",
+        "Drink slowly.",
+      ],
+    },
+    {
+      id: "recovering-2",
+      name: "Congee (Rice Porridge)",
+      emoji: "🍚",
+      description: "Gentle, soft, and easy on everything. East Asia's cure-all.",
+      ingredients: ["150g jasmine rice", "1 litre chicken or veg stock", "2 garlic cloves", "Fresh ginger", "Soy sauce", "Spring onions", "Soft-boiled egg (optional)"],
+      steps: [
+        "Rinse rice and add to a large pot with stock.",
+        "Add sliced ginger and garlic.",
+        "Simmer on low heat 40–50 minutes, stirring occasionally until porridge-thick.",
+        "Season with soy sauce.",
+        "Serve with soft-boiled egg and spring onions on top.",
+      ],
+    },
+    {
+      id: "recovering-3",
+      name: "Banana & Oat Pancakes",
+      emoji: "🥞",
+      description: "Two ingredients, naturally sweet, gentle on the stomach.",
+      ingredients: ["2 ripe bananas", "2 eggs", "Pinch of cinnamon", "Coconut oil for frying", "Honey to serve"],
+      steps: [
+        "Mash bananas thoroughly in a bowl.",
+        "Whisk in the eggs and cinnamon.",
+        "Heat a little coconut oil in a non-stick pan over medium-low.",
+        "Pour small circles and cook 2–3 min until bubbles form, flip gently.",
+        "Serve with a drizzle of honey.",
+      ],
+    },
+    {
+      id: "recovering-4",
+      name: "Toast & Poached Egg",
+      emoji: "🍳",
+      description: "The gentlest, most perfect thing. Protein and carbs.",
+      ingredients: ["2 eggs", "2 slices sourdough", "1 tbsp white wine vinegar", "Salt", "Black pepper", "Butter"],
+      steps: [
+        "Bring a pan of water to a gentle simmer, add vinegar.",
+        "Toast and butter the bread.",
+        "Crack each egg into a cup first.",
+        "Create a gentle swirl in the water, lower the cup and release the egg.",
+        "Cook 3–4 minutes, lift out with a slotted spoon, season, serve on toast.",
+      ],
+    },
+    {
+      id: "recovering-5",
+      name: "Ginger & Honey Tea",
+      emoji: "🍵",
+      description: "Not a recipe, just the right thing to drink.",
+      ingredients: ["500ml water", "Thumb of fresh ginger", "1 lemon", "2 tbsp honey", "Pinch of turmeric (optional)"],
+      steps: [
+        "Peel and slice ginger into coins.",
+        "Bring water to the boil, add ginger.",
+        "Simmer 10 minutes.",
+        "Pour into a mug through a sieve.",
+        "Add lemon juice, honey, and turmeric. Sip slowly.",
+      ],
+    },
+  ],
+
+  // ─── BORED ──────────────────────────────────────────────────────────────────
+  bored: [
+    {
+      id: "bored-1",
+      name: "Homemade Bread",
+      emoji: "🍞",
+      description: "Satisfying to make, incredible to smell, even better to eat.",
+      ingredients: ["500g strong white flour", "7g fast-action yeast", "1 tsp salt", "1 tsp sugar", "300ml warm water", "2 tbsp olive oil"],
+      steps: [
+        "Mix flour, yeast, salt and sugar. Make a well, add water and oil.",
+        "Knead for 10 minutes until smooth and elastic.",
+        "Cover and leave in a warm place 1 hour until doubled.",
+        "Punch down, shape into a loaf, place in a tin.",
+        "Leave 30 minutes more, then bake at 220°C for 25–30 minutes.",
+      ],
+    },
+    {
+      id: "bored-2",
+      name: "Homemade Cinnamon Rolls",
+      emoji: "🌀",
+      description: "A whole afternoon project with the most rewarding ending.",
+      ingredients: ["For dough: 450g flour, 7g yeast, 250ml warm milk, 60g butter, 2 eggs, 50g sugar", "For filling: 80g butter, 150g brown sugar, 3 tbsp cinnamon", "For icing: 150g icing sugar, 3 tbsp cream cheese, 2 tbsp milk"],
+      steps: [
+        "Make dough: mix dry ingredients, add wet, knead 8 min. Rise 1 hour.",
+        "Roll into a rectangle, spread softened butter, then mix sugar and cinnamon.",
+        "Roll tightly, slice into 12. Place in a buttered tin, rise 30 min more.",
+        "Bake at 180°C for 20–22 minutes until golden.",
+        "Mix icing and drizzle generously over warm rolls.",
+      ],
+    },
+    {
+      id: "bored-3",
+      name: "Sushi Rolls",
+      emoji: "🍱",
+      description: "Genuinely fun to make — once you start you won't stop.",
+      ingredients: ["200g sushi rice", "4 tbsp rice vinegar", "Nori sheets", "Cucumber", "Avocado", "Smoked salmon or cooked prawns", "Soy sauce, pickled ginger, wasabi"],
+      steps: [
+        "Cook rice, season with rice vinegar while warm. Cool completely.",
+        "Lay nori on a bamboo mat (or cling film). Spread rice thinly leaving a 2cm border.",
+        "Line your fillings horizontally across the middle.",
+        "Roll tightly using the mat, press firmly to seal.",
+        "Slice into rounds with a wet knife. Serve with soy, ginger and wasabi.",
+      ],
+    },
+    {
+      id: "bored-4",
+      name: "Cheese Scones",
+      emoji: "🧀",
+      description: "20 minutes, incredibly easy, and your kitchen will smell incredible.",
+      ingredients: ["225g self-raising flour", "1 tsp baking powder", "Pinch of salt", "50g butter (cold, cubed)", "80g strong cheddar (grated)", "150ml milk", "1 tsp mustard powder"],
+      steps: [
+        "Preheat oven to 220°C.",
+        "Rub butter into flour until it resembles breadcrumbs.",
+        "Stir in cheese and mustard powder.",
+        "Add milk and mix into a soft dough — don't overwork.",
+        "Pat out, cut into rounds, bake 12–15 minutes until golden.",
+      ],
+    },
+    {
+      id: "bored-5",
+      name: "Chocolate Chip Cookies",
+      emoji: "🍪",
+      description: "The science of the perfect cookie. A worthy project.",
+      ingredients: ["225g butter (softened)", "200g caster sugar", "150g brown sugar", "2 eggs", "1 tsp vanilla", "350g plain flour", "1 tsp baking soda", "1 tsp salt", "300g chocolate chips"],
+      steps: [
+        "Beat butter and both sugars until pale and fluffy.",
+        "Beat in eggs one at a time with vanilla.",
+        "Fold in flour, baking soda, salt until combined.",
+        "Stir in chocolate chips. Chill dough 30 minutes.",
+        "Scoop onto lined trays, bake at 180°C for 11–13 minutes — remove while slightly underdone.",
+      ],
+    },
+  ],
+
+  // ─── NOSTALGIC ──────────────────────────────────────────────────────────────
+  nostalgic: [
+    {
+      id: "nostalgic-1",
+      name: "Shepherd's Pie",
+      emoji: "🥧",
+      description: "The dish your childhood tasted like. Proper and comforting.",
+      ingredients: ["500g lamb mince", "1 onion", "2 carrots", "2 tbsp tomato purée", "1 tbsp Worcestershire sauce", "300ml lamb stock", "800g potatoes", "50g butter", "Splash of milk"],
+      steps: [
+        "Brown lamb mince in a large pan. Drain excess fat.",
+        "Add diced onion, carrot, tomato purée and Worcestershire sauce.",
+        "Pour in stock, simmer 20 minutes until thickened.",
+        "Boil and mash potatoes with butter and milk.",
+        "Spread mince in an oven dish, top with mash, fork ridges on top, bake 25 min at 190°C.",
+      ],
+    },
+    {
+      id: "nostalgic-2",
+      name: "Beans on Toast",
+      emoji: "🫘",
+      description: "Don't overthink it. Sometimes the classics are classics for a reason.",
+      ingredients: ["1 tin baked beans", "2 thick slices white bread", "Butter", "Grated cheddar (optional)", "A dash of Worcestershire sauce"],
+      steps: [
+        "Heat beans in a saucepan over medium heat, stirring.",
+        "Add a dash of Worcestershire sauce.",
+        "Toast the bread to golden.",
+        "Butter generously.",
+        "Pour beans over toast, top with cheese if you like.",
+      ],
+    },
+    {
+      id: "nostalgic-3",
+      name: "Chicken & Sweetcorn Soup",
+      emoji: "🍜",
+      description: "Sweet, thick, and deeply comforting. A take-away memory.",
+      ingredients: ["1 chicken breast (poached and shredded)", "1 tin sweetcorn", "1 litre chicken stock", "1 tbsp soy sauce", "1 tbsp cornflour + 2 tbsp water", "2 eggs (beaten)", "Spring onions", "Sesame oil"],
+      steps: [
+        "Bring stock to a simmer, add sweetcorn and soy sauce.",
+        "Mix cornflour with water, stir into the soup to thicken.",
+        "Add shredded chicken.",
+        "Slowly pour in beaten eggs while stirring in circles — they'll form ribbons.",
+        "Season, drizzle sesame oil, top with spring onions.",
+      ],
+    },
+    {
+      id: "nostalgic-4",
+      name: "Rice Pudding",
+      emoji: "🍚",
+      description: "Sweet, slow, creamy. The pudding that feels like a memory.",
+      ingredients: ["80g pudding rice", "600ml whole milk", "200ml double cream", "50g sugar", "1 tsp vanilla extract", "Pinch of nutmeg"],
+      steps: [
+        "Combine everything in an ovenproof dish.",
+        "Stir well and grate over nutmeg.",
+        "Bake at 150°C for 2 hours, stirring after the first 30 minutes.",
+        "The top should be golden and the pudding thick and creamy.",
+        "Serve warm with a spoon of jam if you like.",
+      ],
+    },
+    {
+      id: "nostalgic-5",
+      name: "Victoria Sponge",
+      emoji: "🎂",
+      description: "The quintessential cake. Every slice is a special occasion.",
+      ingredients: ["200g butter", "200g caster sugar", "4 eggs", "200g self-raising flour", "1 tsp baking powder", "Jam", "200ml double cream", "Icing sugar"],
+      steps: [
+        "Preheat oven to 180°C. Grease two 20cm sandwich tins.",
+        "Beat butter and sugar until pale. Add eggs one at a time.",
+        "Fold in flour and baking powder.",
+        "Divide between tins, bake 20–25 minutes until springy.",
+        "Cool completely. Spread one sponge with jam and cream, top with the other and dust with icing sugar.",
+      ],
+    },
+  ],
+
+  // ─── OVERWHELMED ────────────────────────────────────────────────────────────
+  overwhelmed: [
+    {
+      id: "overwhelmed-1",
+      name: "Chocolate Lava Cake",
+      emoji: "🍫",
+      description: "Intense, rich, and requires 100% of your focus — in the best way.",
+      ingredients: ["100g dark chocolate (70%)", "100g butter", "2 eggs + 2 yolks", "80g caster sugar", "30g plain flour", "Cocoa to dust", "Ice cream to serve"],
+      steps: [
+        "Melt chocolate and butter together, cool a little.",
+        "Whisk eggs, yolks and sugar until pale.",
+        "Fold in chocolate, then flour.",
+        "Pour into buttered, cocoa-dusted ramekins.",
+        "Bake at 200°C for exactly 12 minutes. Rest 1 min, turn out.",
+      ],
+    },
+    {
+      id: "overwhelmed-2",
+      name: "One-Pan Pasta",
+      emoji: "🍝",
+      description: "Everything in one pan. Minimal effort, no decisions, comfort guaranteed.",
+      ingredients: ["200g pasta", "1 tin chopped tomatoes", "2 garlic cloves", "500ml water", "Handful of spinach", "Salt, pepper", "Parmesan"],
+      steps: [
+        "Put pasta, tomatoes, garlic and water in a wide pan.",
+        "Bring to the boil, stirring frequently.",
+        "Cook 10–12 minutes until pasta is done and sauce has reduced.",
+        "Stir in spinach until wilted.",
+        "Season and serve with parmesan. One pan, one wooden spoon.",
+      ],
+    },
+    {
+      id: "overwhelmed-3",
+      name: "Breathing Brownie",
+      emoji: "🍫",
+      description: "Make something with your hands. The kneading is the therapy.",
+      ingredients: ["150g dark chocolate", "150g butter", "3 eggs", "250g caster sugar", "75g plain flour", "30g cocoa", "1 tsp vanilla", "Pinch of salt"],
+      steps: [
+        "Preheat oven to 180°C. Line a 20cm tin.",
+        "Melt chocolate and butter together.",
+        "Whisk eggs and sugar until slightly thickened.",
+        "Fold in chocolate, then flour, cocoa, vanilla and salt.",
+        "Pour into tin, bake 20–25 minutes. Let cool before cutting — they should still be fudgy.",
+      ],
+    },
+    {
+      id: "overwhelmed-4",
+      name: "Warm Lentil Salad",
+      emoji: "🥗",
+      description: "Nourishing, earthy and grounding. This one genuinely helps.",
+      ingredients: ["1 tin Puy lentils", "2 handfuls spinach", "1 roasted red pepper", "2 tbsp olive oil", "1 tbsp red wine vinegar", "1 tsp Dijon mustard", "Salt & pepper", "Feta"],
+      steps: [
+        "Drain and rinse lentils, warm in a pan.",
+        "Whisk oil, vinegar and mustard together for dressing.",
+        "Toss warm lentils with spinach — it will wilt slightly.",
+        "Add sliced roasted peppers.",
+        "Drizzle dressing, crumble feta on top. Eat slowly.",
+      ],
+    },
+    {
+      id: "overwhelmed-5",
+      name: "Banana Bread",
+      emoji: "🍌",
+      description: "Slow, easy, and the smell alone will calm everything down.",
+      ingredients: ["3 very ripe bananas", "80ml vegetable oil", "150g caster sugar", "2 eggs", "1 tsp vanilla", "225g plain flour", "1 tsp baking soda", "½ tsp salt", "100g chocolate chips (optional)"],
+      steps: [
+        "Preheat oven to 175°C. Grease a loaf tin.",
+        "Mash bananas thoroughly.",
+        "Stir in oil, sugar, eggs and vanilla.",
+        "Fold in flour, baking soda and salt. Add chocolate chips if using.",
+        "Pour into tin, bake 55–65 minutes until a skewer comes out clean.",
+      ],
+    },
+  ],
 };
 
 export default recipes;
