@@ -528,12 +528,7 @@ export default function Home() {
           >
             {/* Mood Buttons in orbit */}
             <motion.div
-              className="absolute"
-              style={{
-                left: "50%",
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-              }}
+              className="absolute inset-0"
               initial="hidden"
               animate="visible"
               variants={{
