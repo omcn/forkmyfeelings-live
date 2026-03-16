@@ -527,6 +527,15 @@ export default function ProfilePage() {
         <button onClick={() => { setShowFriends(true); setShowRequests(false); }} className="mt-4 bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-xl">🧑‍🤝‍🧑 My Friends</button>
         <button onClick={() => router.push("/submit")} className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">📤 Submit a Recipe</button>
         <button onClick={handleSave} className="w-full bg-pink-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg mt-2">Save Changes</button>
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            router.push("/");
+          }}
+          className="w-full bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded-lg mt-4 transition"
+        >
+          Sign Out
+        </button>
       </div>
 
       {showFindFriends && <FindFriends currentUser={profile} onClose={() => setShowFindFriends(false)} />}
