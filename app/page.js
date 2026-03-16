@@ -460,7 +460,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12 text-center font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12 text-center font-sans overflow-x-hidden">
       <div className="absolute top-4 right-4">
         <button onClick={() => window.location.href = '/profile'}>
           <img
@@ -517,10 +517,12 @@ export default function Home() {
 
 
           {(() => {
-            const containerSize = Math.min((windowWidth || 500) - 32, 500);
-            const radius = containerSize * 0.44;
-            const btnWidth = isMobile ? Math.max(containerSize * 0.22, 80) : 130;
-            const btnHeight = isMobile ? 56 : 70;
+            const containerSize = Math.min((windowWidth || 390) - 32, 460);
+            const btnWidth = isMobile ? Math.min(Math.max(containerSize * 0.24, 82), 110) : 120;
+            const btnHeight = isMobile ? 52 : 62;
+            // Clamp radius so buttons never overflow container bounds
+            const maxRadius = containerSize / 2 - btnWidth / 2 - 6;
+            const radius = Math.min(containerSize * 0.44, maxRadius);
             return (
           <div
             className="relative mx-auto"
