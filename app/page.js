@@ -518,7 +518,11 @@ export default function Home() {
 
           {(() => {
             const containerSize = Math.min((windowWidth || 390) - 32, 460);
-            const btnWidth = isMobile ? Math.min(Math.max(containerSize * 0.24, 82), 110) : 120;
+            // btnWidth must stay below radius × 0.618 (the chord between adjacent
+            // buttons at 36° spacing) to prevent top/bottom neighbours from clipping.
+            // Solving the constraint gives max ~0.227 × containerSize; use 0.22 with
+            // a floor of 70 so tiny phones still have tappable buttons.
+            const btnWidth = isMobile ? Math.max(containerSize * 0.22, 70) : 120;
             const btnHeight = isMobile ? 52 : 62;
             // Clamp radius so buttons never overflow container bounds
             const maxRadius = containerSize / 2 - btnWidth / 2 - 6;
@@ -579,17 +583,17 @@ export default function Home() {
 
                         }}
                         whileTap={{ scale: 0.95 }}
-                        className={`shadow-md px-4 py-2 text-base rounded-full border transition ${
+                        className={`shadow-md ${isMobile ? "px-1 py-1" : "px-4 py-2"} text-base rounded-full border transition ${
                           selectedMoods.includes(moodKey)
                             ? "bg-pink-200 border-pink-400"
                             : "bg-white border-gray-300 hover:bg-pink-100"
                         }`}
                       >
                         <div className="flex flex-col items-center justify-center">
-                          <span style={{ fontSize: "1.5rem" }}>
+                          <span style={{ fontSize: isMobile ? "1.2rem" : "1.5rem" }}>
                             {moodEmojis[moodKey] || "🍽️"}
                           </span>
-                          <span className="text-sm font-medium mt-1 capitalize">
+                          <span className={`${isMobile ? "text-[10px]" : "text-sm"} font-medium capitalize truncate w-full text-center block`}>
                             {moodKey.replace("-", " ")}
                           </span>
                         </div>
