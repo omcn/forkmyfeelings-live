@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import SupabaseAuthWatcher from "./components/SupabaseAuthWatcher";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -120,7 +121,21 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className={`${inter.className} bg-rose-50 text-gray-900`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }`,
+          }}
+        />
         <SupabaseAuthWatcher />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: { borderRadius: "12px", fontFamily: "inherit" },
+            success: { style: { background: "#fdf2f8", color: "#9d174d", border: "1px solid #fbcfe8" } },
+            error:   { style: { background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca" } },
+          }}
+        />
         {children}
         <footer className="mt-16 text-sm text-gray-500 text-center pb-10">
           <p>
