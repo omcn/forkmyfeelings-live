@@ -6,6 +6,7 @@ import FindFriends from "../components/FindFriends";
 import FriendRequests from "../components/FriendRequests";
 import FriendList from "../components/FriendList";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
@@ -17,6 +18,9 @@ export default function ProfilePage() {
   const [incomingCount, setIncomingCount] = useState(0);
   const [showFriends, setShowFriends] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [savedRecipes, setSavedRecipes] = useState([]);
+  const [cookHistory, setCookHistory] = useState([]);
+  const [activeTab, setActiveTab] = useState("profile"); // "profile" | "saved" | "history"
   const router = useRouter();
 
   useEffect(() => {
@@ -57,6 +61,16 @@ export default function ProfilePage() {
         if (isMounted) setLoading(false);
       }
     };
+
+    // Load localStorage data
+    try {
+      const raw = localStorage.getItem("fmf_saved_recipes");
+      setSavedRecipes(raw ? JSON.parse(raw) : []);
+    } catch { setSavedRecipes([]); }
+    try {
+      const raw = localStorage.getItem("fmf_cook_history");
+      setCookHistory(raw ? JSON.parse(raw) : []);
+    } catch { setCookHistory([]); }
 
     fetchProfile();
     timeout = setTimeout(() => {
@@ -109,10 +123,17 @@ export default function ProfilePage() {
     }
   };
 
+  const removeSaved = (id) => {
+    const next = savedRecipes.filter((r) => r.id !== id);
+    setSavedRecipes(next);
+    localStorage.setItem("fmf_saved_recipes", JSON.stringify(next));
+    toast("Removed from saved", { icon: "💔" });
+  };
+
   if (loading) return <div className="p-6 text-center">Loading profile...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center px-6 py-12">
       {errorMessage && (
         <div className="p-4 mb-4 text-center text-red-600 border border-red-300 rounded-lg">{errorMessage}</div>
       )}
@@ -133,33 +154,130 @@ export default function ProfilePage() {
         <input type="file" accept="image/*" onChange={handleAvatarUpload} className="block mt-1 text-sm text-gray-600" />
       </label>
 
-      <h1 className="text-3xl font-bold text-gray-800 my-4">Your Profile</h1>
+      <h1 className="text-3xl font-bold text-gray-800 my-4">
+        {profile?.username || "Your Profile"}
+      </h1>
 
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-md space-y-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-        <input type="text" name="username" value={formData.username} onChange={handleChange} className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300" />
-
-        <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-        <textarea name="bio" rows={3} value={formData.bio} onChange={handleChange} className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300" />
-
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowFindFriends(true)} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-xl text-sm">🔍 Find Friends</button>
-          <button onClick={() => { setShowRequests(true); setShowFriends(false); }} className="relative bg-yellow-300 hover:bg-yellow-400 text-yellow-900 py-2 px-4 rounded-xl text-sm">
-            👥 Requests
-            {incomingCount > 0 && <span className="absolute -top-2 -right-2 bg-red-500 w-5 h-5 rounded-full text-white text-xs flex items-center justify-center">{incomingCount}</span>}
+      {/* Tabs */}
+      <div className="flex gap-2 mb-4 w-full max-w-md">
+        {[
+          { key: "profile", label: "⚙️ Profile" },
+          { key: "saved", label: `❤️ Saved (${savedRecipes.length})` },
+          { key: "history", label: `🍳 History (${cookHistory.length})` },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition ${
+              activeTab === tab.key
+                ? "bg-pink-500 text-white shadow"
+                : "bg-white text-gray-600 border border-pink-100"
+            }`}
+          >
+            {tab.label}
           </button>
-          <button onClick={() => { setShowFriends(true); setShowRequests(false); }} className="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-xl text-sm">🧑‍🤝‍🧑 Friends</button>
-        </div>
-
-        <button onClick={() => router.push("/submit")} className="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">📤 Submit a Recipe</button>
-        <button onClick={handleSave} className="w-full bg-pink-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg">Save Changes</button>
-        <button
-          onClick={async () => { await supabase.auth.signOut(); router.push("/"); }}
-          className="w-full bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded-lg transition"
-        >
-          Sign Out
-        </button>
+        ))}
       </div>
+
+      <AnimatePresence mode="wait">
+        {activeTab === "profile" && (
+          <motion.div
+            key="profile-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-md space-y-2"
+          >
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input type="text" name="username" value={formData.username} onChange={handleChange} className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300" />
+
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+            <textarea name="bio" rows={3} value={formData.bio} onChange={handleChange} className="mb-4 w-full px-3 py-2 rounded-lg border border-gray-300" />
+
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setShowFindFriends(true)} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-xl text-sm">🔍 Find Friends</button>
+              <button onClick={() => { setShowRequests(true); setShowFriends(false); }} className="relative bg-yellow-300 hover:bg-yellow-400 text-yellow-900 py-2 px-4 rounded-xl text-sm">
+                👥 Requests
+                {incomingCount > 0 && <span className="absolute -top-2 -right-2 bg-red-500 w-5 h-5 rounded-full text-white text-xs flex items-center justify-center">{incomingCount}</span>}
+              </button>
+              <button onClick={() => { setShowFriends(true); setShowRequests(false); }} className="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-xl text-sm">🧑‍🤝‍🧑 Friends</button>
+            </div>
+
+            <button onClick={() => router.push("/submit")} className="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">📤 Submit a Recipe</button>
+            <button onClick={handleSave} className="w-full bg-pink-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg">Save Changes</button>
+            <button
+              onClick={async () => { await supabase.auth.signOut(); router.push("/"); }}
+              className="w-full bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded-lg transition"
+            >
+              Sign Out
+            </button>
+          </motion.div>
+        )}
+
+        {activeTab === "saved" && (
+          <motion.div
+            key="saved-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="w-full max-w-md space-y-3"
+          >
+            {savedRecipes.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center shadow-md">
+                <div className="text-5xl mb-3">🍽️</div>
+                <p className="text-gray-500 font-medium">No saved recipes yet.</p>
+                <p className="text-sm text-gray-400 mt-1">Tap the ❤️ on any recipe to save it here.</p>
+              </div>
+            ) : (
+              savedRecipes.map((r) => (
+                <div key={r.id} className="bg-white rounded-2xl p-4 shadow-md flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900">{r.emoji} {r.name}</p>
+                    <p className="text-sm text-gray-500 line-clamp-2 mt-0.5">{r.description}</p>
+                  </div>
+                  <button
+                    onClick={() => removeSaved(r.id)}
+                    className="text-pink-400 hover:text-pink-600 text-xl shrink-0"
+                    title="Remove"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))
+            )}
+          </motion.div>
+        )}
+
+        {activeTab === "history" && (
+          <motion.div
+            key="history-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="w-full max-w-md space-y-3"
+          >
+            {cookHistory.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center shadow-md">
+                <div className="text-5xl mb-3">👨‍🍳</div>
+                <p className="text-gray-500 font-medium">No recipes cooked yet.</p>
+                <p className="text-sm text-gray-400 mt-1">Start a recipe and it'll appear here.</p>
+              </div>
+            ) : (
+              cookHistory.map((r, i) => (
+                <div key={`${r.id}-${i}`} className="bg-white rounded-2xl p-4 shadow-md flex items-center gap-3">
+                  <span className="text-3xl">{r.emoji}</span>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">{r.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {new Date(r.cookedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {showFindFriends && <FindFriends currentUser={profile} onClose={() => setShowFindFriends(false)} />}
       {showFriends && !showRequests && <FriendList currentUser={profile} onClose={() => setShowFriends(false)} />}
