@@ -1,0 +1,59 @@
+{
+  "name": "Fork My Feels",
+  "short_name": "ForkMyFeels",
+  "description": "Mood-based recipe suggestions. Tell us how you feel and we'll feed your vibe.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff1f2",
+  "theme_color": "#fb7185",
+  "lang": "en-GB",
+  "categories": ["food", "lifestyle", "health"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Pick your mood and get a recipe"
+    },
+    {
+      "src": "/screenshots/cooking.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Step-by-step cooking mode with Rascal"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Feed Me",
+      "short_name": "Feed Me",
+      "description": "Pick your mood and get a recipe suggestion",
+      "url": "/",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -21,7 +21,6 @@ import { useWindowSize } from "@uidotdev/usehooks"; // or your own width/height 
 
 
 import { mergeImages } from "../lib/mergeImages";
-import { b } from "framer-motion/client";
 import RascalSpaceGlide from "./components/RascalSpaceGlide";
 
 
@@ -612,7 +611,6 @@ export default function Home() {
                   tired: "/videos/rascal-tired.mp4",
                   chill: "/videos/rascal-chill.mp4",
                   rushed: "/videos/rascal-rushed.mp4",
-                  sad: "/videos/rascal-sad.mp4",
                   happy: "/videos/rascal-happy1.mp4",
                   overwhelmed: "/videos/rascal-overwhelmed.mp4",
                   nostalgic: "/videos/rascal-nostalgic.mp4",
@@ -1005,6 +1003,17 @@ export default function Home() {
                   <h2 className="text-xl font-semibold mb-2">⭐ Rate This Recipe</h2>
                   <p className="text-gray-600 mb-4">How well did it match your mood?</p>
 
+                  {showCelebration && (
+                    <div className="fixed inset-0 z-[9999] pointer-events-none">
+                      <Confetti
+                        width={window.innerWidth}
+                        height={window.innerHeight}
+                        numberOfPieces={300}
+                        recycle={false}
+                      />
+                    </div>
+                  )}
+
                   <div className="flex justify-center gap-1 mb-4">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -1017,16 +1026,6 @@ export default function Home() {
                         ★
                       </button>
                     ))}
-                    {showCelebration && (
-                      <div className="fixed inset-0 z-[9999] pointer-events-none">
-                        <Confetti
-                          width={window.innerWidth}
-                          height={window.innerHeight}
-                          numberOfPieces={10000}
-                          recycle={false}
-                        />
-                      </div>
-                    )}
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
