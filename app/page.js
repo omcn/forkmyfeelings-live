@@ -4,7 +4,7 @@
 
 
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Howl } from "howler";
 
@@ -102,6 +102,7 @@ function MoodTooltip({ label, children }) {
 
 
 export default function Home() {
+  const [appLoading, setAppLoading] = useState(true);
   const [selectedMoods, setSelectedMoods] = useState([]);
   const [recipes, setRecipes] = useState({});
   const [recipe, setRecipe] = useState(null);
@@ -112,7 +113,8 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [eatOutMode, setEatOutMode] = useState(false);
   const [readyToShowMoods, setReadyToShowMoods] = useState(false);
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = (windowWidth || 0) < 768;
   const [showShoppingList, setShowShoppingList] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -133,9 +135,9 @@ export default function Home() {
 
 
 
-  const clickSound = new Howl({ src: ["/sounds/click.mp3"], volume: 0.4 });
-  const chimeSound = new Howl({ src: ["/sounds/chime.mp3"], volume: 0.4 });
-  const bloopSound = new Howl({ src: ["/sounds/bloop.mp3"], volume: 0.4 });
+  const clickSound = useMemo(() => new Howl({ src: ["/sounds/click.mp3"], volume: 0.4 }), []);
+  const chimeSound = useMemo(() => new Howl({ src: ["/sounds/chime.mp3"], volume: 0.4 }), []);
+  const bloopSound = useMemo(() => new Howl({ src: ["/sounds/bloop.mp3"], volume: 0.4 }), []);
 
   const submitRecipeRating = async (ratingValue) => {
     if (!user || !recipe) return;
@@ -293,8 +295,15 @@ export default function Home() {
         setRecipes(formatted);
       }
   
-      // 4. Animate mood buttons after a short delay
-      setTimeout(() => setReadyToShowMoods(true), 300);
+      // 4. Restore last selected mood
+      const lastMood = localStorage.getItem("lastMood");
+      if (lastMood) setSelectedMoods([lastMood]);
+
+      // 5. Animate mood buttons after a short delay
+      setTimeout(() => {
+        setReadyToShowMoods(true);
+        setAppLoading(false);
+      }, 300);
     };
   
     initApp();
@@ -425,6 +434,31 @@ export default function Home() {
     );
   }
 
+  if (appLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-48 h-8 bg-pink-200 rounded-full animate-pulse mb-4" />
+        <div className="w-64 h-4 bg-pink-100 rounded-full animate-pulse mb-12" />
+        <div className="relative w-72 h-72 flex items-center justify-center">
+          <div className="w-36 h-36 rounded-full bg-pink-200 animate-pulse" />
+          {[...Array(6)].map((_, i) => {
+            const angle = (360 / 6) * i;
+            const x = 120 * Math.cos((angle * Math.PI) / 180);
+            const y = 120 * Math.sin((angle * Math.PI) / 180);
+            return (
+              <div
+                key={i}
+                className="absolute w-20 h-10 bg-white rounded-full animate-pulse opacity-60"
+                style={{ left: `calc(50% + ${x}px - 40px)`, top: `calc(50% + ${y}px - 20px)` }}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-12 w-36 h-14 bg-pink-300 rounded-full animate-pulse" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12 text-center font-sans">
       <div className="absolute top-4 right-4">
@@ -482,13 +516,22 @@ export default function Home() {
           </motion.button>
 
 
-          <div className="relative w-[500px] h-[500px] mx-auto">
+          {(() => {
+            const containerSize = Math.min((windowWidth || 500) - 32, 500);
+            const radius = containerSize * 0.44;
+            const btnWidth = isMobile ? Math.max(containerSize * 0.22, 80) : 130;
+            const btnHeight = isMobile ? 56 : 70;
+            return (
+          <div
+            className="relative mx-auto"
+            style={{ width: containerSize, height: containerSize }}
+          >
             {/* Mood Buttons in orbit */}
             <motion.div
               className="absolute"
               style={{
-                left: isMobile ? "28.5%" : "38%",
-                top: isMobile ? "40%" : "46%",
+                left: "50%",
+                top: "50%",
                 transform: "translate(-50%, -50%)",
               }}
               initial="hidden"
@@ -504,7 +547,6 @@ export default function Home() {
                   .map((moodKey, i, arr) => {
                     const total = arr.length;
                     const angle = (360 / total) * i;
-                    const radius = isMobile ? 160 : 220;
                     const x = radius * Math.cos((angle * Math.PI) / 180);
                     const y = radius * Math.sin((angle * Math.PI) / 180);
 
@@ -516,8 +558,8 @@ export default function Home() {
                           left: `calc(50% + ${x}px)`,
                           top: `calc(50% + ${y}px)`,
                           transform: "translate(-50%, -50%)",
-                          width: isMobile ? "90px" : "130px",
-                          height: isMobile ? "60px" : "70px",
+                          width: btnWidth,
+                          height: btnHeight,
                           borderRadius: "999px",
                         }}
                         variants={{
@@ -526,10 +568,10 @@ export default function Home() {
                         }}
                         onClick={() => {
                           clickSound.play();
-                          setSelectedMoods((prev) =>
-                            prev[0] === moodKey ? [] : [moodKey]
-                          );
-                          ;
+                          const next = selectedMoods[0] === moodKey ? [] : [moodKey];
+                          setSelectedMoods(next);
+                          if (next.length > 0) localStorage.setItem("lastMood", next[0]);
+                          else localStorage.removeItem("lastMood");
 
                         }}
                         whileTap={{ scale: 0.95 }}
@@ -624,11 +666,12 @@ export default function Home() {
                 const currentMood = selectedMoods[0];
                 const videoSrc = rascalVideos[currentMood] || "/videos/rascal-idle.mp4";
 
+                const rascalSize = Math.min(containerSize * 0.46, 250);
                 const wrapperStyle = {
-                  width: isMobile ? "200px" : "250px",
-                  height: isMobile ? "200px" : "250px",
-                  left: isMobile ? "38%" : "50%",   // 👈 your original mobile vs desktop positions
-                  top: isMobile ? "45%" : "50%",
+                  width: rascalSize,
+                  height: rascalSize,
+                  left: "50%",
+                  top: "50%",
                   transform: "translate(-50%, -50%)",
                 };
 
@@ -658,6 +701,8 @@ export default function Home() {
 
 
           </div>
+          );
+          })()}
 
 
           <motion.button
@@ -772,6 +817,20 @@ export default function Home() {
             >
               I’m not feeling it
             </motion.button>
+
+            {typeof navigator !== "undefined" && navigator.share && (
+              <motion.button
+                onClick={() => navigator.share({
+                  title: `${recipe.emoji} ${recipe.name}`,
+                  text: `I'm making ${recipe.name} tonight — Fork My Feels matched it to my mood! 🍴`,
+                  url: window.location.href,
+                })}
+                whileTap={{ scale: 0.96 }}
+                className="mt-3 bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-2 px-4 rounded-xl transition"
+              >
+                📤 Share Recipe
+              </motion.button>
+            )}
 
             <motion.button
               onClick={() => setShowShoppingList(true)}
@@ -1006,7 +1065,7 @@ export default function Home() {
                   {showCelebration && (
                     <div className="fixed inset-0 z-[9999] pointer-events-none">
                       <Confetti
-                        width={window.innerWidth}
+                        width={windowWidth || 390}
                         height={window.innerHeight}
                         numberOfPieces={300}
                         recycle={false}
