@@ -528,9 +528,15 @@ export default function Home() {
             className="relative mx-auto"
             style={{ width: containerSize, height: containerSize }}
           >
-            {/* Mood Buttons in orbit */}
+            {/* Mood Buttons in orbit — anchor at exact container center */}
             <motion.div
-              className="absolute inset-0"
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                width: 0,
+                height: 0,
+              }}
               initial="hidden"
               animate="visible"
               variants={{
@@ -552,16 +558,15 @@ export default function Home() {
                         key={moodKey}
                         style={{
                           position: "absolute",
-                          left: `calc(50% + ${x}px)`,
-                          top: `calc(50% + ${y}px)`,
-                          transform: "translate(-50%, -50%)",
+                          left: x - btnWidth / 2,
+                          top: y - btnHeight / 2,
                           width: btnWidth,
                           height: btnHeight,
                           borderRadius: "999px",
                         }}
                         variants={{
-                          hidden: { opacity: 0, scale: 0.8 },
-                          visible: { opacity: 1, scale: 1 },
+                          hidden: { opacity: 0, scale: 0.8, originX: "50%", originY: "50%" },
+                          visible: { opacity: 1, scale: 1, originX: "50%", originY: "50%" },
                         }}
                         onClick={() => {
                           clickSound.play();
