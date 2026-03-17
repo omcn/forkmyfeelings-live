@@ -22,6 +22,8 @@ import Onboarding from "./components/Onboarding";
 import SavedRecipes from "./components/SavedRecipes";
 import NotificationPrompt from "./components/NotificationPrompt";
 import TodayFeedModal from "./components/TodayFeedModal";
+import RecipeBrowse from "./components/RecipeBrowse";
+import UsernamePrompt from "./components/UsernamePrompt";
 import toast from "react-hot-toast";
 
 
@@ -132,6 +134,10 @@ export default function Home() {
   const [showSaved, setShowSaved] = useState(false);
   const [noRecipesFound, setNoRecipesFound] = useState(false);
   const [recipeAvgRating, setRecipeAvgRating] = useState(null);
+  const [showBrowse, setShowBrowse] = useState(false);
+  const [showUsernamePrompt, setShowUsernamePrompt] = useState(false);
+  const [feedReactions, setFeedReactions] = useState({}); // postId -> emoji string
+  const [feedRefreshing, setFeedRefreshing] = useState(false);
   const [savedIds, setSavedIds] = useState(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -169,6 +175,27 @@ export default function Home() {
     } else {
       console.log("✅ Rating saved:", ratingValue);
     }
+  };
+
+  const refreshFeed = async () => {
+    setFeedRefreshing(true);
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from("recipe_posts")
+      .select("*, profiles(username, avatar_url)")
+      .gte("created_at", today)
+      .order("created_at", { ascending: false });
+    if (!error) setPosts(data || []);
+    setFeedRefreshing(false);
+  };
+
+  const reactToPost = (postId, emoji) => {
+    setFeedReactions((prev) => {
+      const current = prev[postId];
+      const next = current === emoji ? {} : { ...prev, [postId]: emoji };
+      localStorage.setItem("fmf_feed_reactions", JSON.stringify({ ...prev, [postId]: emoji === current ? undefined : emoji }));
+      return current === emoji ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== postId)) : { ...prev, [postId]: emoji };
+    });
   };
 
   const toggleFavourite = (r) => {
@@ -291,16 +318,16 @@ export default function Home() {
       const currentUser = session?.user;
       setUser(currentUser);
   
-      // 2. Load today's posts
+      // 2. Load today's posts (join author profiles for username/avatar)
       const today = new Date().toISOString().slice(0, 10);
       const { data: postData, error: postError } = await supabase
         .from("recipe_posts")
-        .select("*")
+        .select("*, profiles(username, avatar_url)")
         .gte("created_at", today)
         .order("created_at", { ascending: false });
-  
+
       if (!postError) {
-        setPosts(postData);
+        setPosts(postData || []);
       }
   
       // 3. Load approved recipes and group by moods
@@ -334,6 +361,19 @@ export default function Home() {
       if (!localStorage.getItem("fmf_onboarded")) {
         setShowOnboarding(true);
       }
+
+      // 6. Prompt for username if new user has none set
+      if (currentUser && !localStorage.getItem("fmf_username_set")) {
+        const { data: prof } = await supabase.from("profiles").select("username").eq("id", currentUser.id).single();
+        if (!prof?.username) setShowUsernamePrompt(true);
+        else localStorage.setItem("fmf_username_set", "1");
+      }
+
+      // 7. Restore feed reactions from localStorage
+      try {
+        const raw = localStorage.getItem("fmf_feed_reactions");
+        if (raw) setFeedReactions(JSON.parse(raw));
+      } catch {}
 
       // 6. Animate mood buttons after a short delay
       setTimeout(() => {
@@ -511,7 +551,17 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12 text-center font-sans overflow-x-hidden">
       {showOnboarding && <Onboarding onDone={() => setShowOnboarding(false)} />}
+      {showUsernamePrompt && user && (
+        <UsernamePrompt
+          userId={user.id}
+          onDone={(username) => {
+            setShowUsernamePrompt(false);
+            localStorage.setItem("fmf_username_set", "1");
+          }}
+        />
+      )}
       <AnimatePresence>{showSaved && <SavedRecipes onClose={() => setShowSaved(false)} />}</AnimatePresence>
+      <AnimatePresence>{showBrowse && <RecipeBrowse onClose={() => setShowBrowse(false)} />}</AnimatePresence>
       {showRecipeCard && <NotificationPrompt />}
 
       <div className="absolute top-4 left-4 flex items-center gap-3">
@@ -531,6 +581,13 @@ export default function Home() {
           {posts.length > 0 && (
             <span className="bg-pink-500 text-white text-[10px] rounded-full px-1.5 py-0.5 ml-1">{posts.length}</span>
           )}
+        </button>
+        <button
+          onClick={() => setShowBrowse(true)}
+          className="flex items-center gap-1 bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition"
+          title="Browse all recipes"
+        >
+          🍴 Browse
         </button>
       </div>
       <div className="absolute top-4 right-4">
@@ -1232,12 +1289,21 @@ export default function Home() {
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold">📸 Today’s Forks</h2>
-          <button
-            onClick={() => setShowFeed(false)}
-            className="text-sm text-gray-500 hover:text-gray-700"
-          >
-            ✕ Close
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={refreshFeed}
+              disabled={feedRefreshing}
+              className="text-xs text-pink-500 hover:text-pink-700 font-semibold disabled:opacity-50"
+            >
+              {feedRefreshing ? "↻ Loading…" : "↻ Refresh"}
+            </button>
+            <button
+              onClick={() => setShowFeed(false)}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              ✕ Close
+            </button>
+          </div>
         </div>
 
         {posts.length === 0 ? (
@@ -1247,26 +1313,56 @@ export default function Home() {
             <p className="text-sm text-gray-400 mt-1">Cook something and share it to be the first 🍴</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
-            {posts.map((post) => (
-              <div
-                key={post.id}
-                className="bg-gray-50 p-4 rounded-xl shadow-md"
-              >
-                <img
-                  src={post.photo_url}
-                  alt="Post"
-                  className="rounded-md mb-2 w-full object-cover"
-                />
-                <div className="text-sm text-gray-700">
-                  <p>🧠 Mood: {post.moods}</p>
-                  <p>⭐ {post.rating || "Unrated"}</p>
-                  <p className="text-xs text-gray-400">
-                    🕒 {new Date(post.created_at).toLocaleTimeString()}
-                  </p>
+          <div className="flex flex-col gap-5">
+            {posts.map((post) => {
+              const author = post.profiles;
+              const myReaction = feedReactions[post.id];
+              return (
+                <div key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  {/* Author row */}
+                  <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+                    <img
+                      src={author?.avatar_url || "/rascal-fallback.png"}
+                      alt=""
+                      className="w-8 h-8 rounded-full object-cover border border-pink-200"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {author?.username ? `@${author.username}` : "Anonymous Chef"}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(post.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Photo */}
+                  {post.photo_url && (
+                    <img src={post.photo_url} alt="Post" className="w-full object-cover max-h-72" />
+                  )}
+                  {/* Meta + reactions */}
+                  <div className="px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        <span className="mr-3">🧠 {Array.isArray(post.moods) ? post.moods.join(", ") : post.moods}</span>
+                        {post.rating > 0 && <span>{"⭐".repeat(post.rating)}</span>}
+                      </div>
+                    </div>
+                    {/* Emoji reactions */}
+                    <div className="flex gap-2 mt-2">
+                      {["😍", "🤤", "👏", "🔥", "❤️"].map((emoji) => (
+                        <button
+                          key={emoji}
+                          onClick={() => reactToPost(post.id, emoji)}
+                          className={`text-lg rounded-full px-2 py-0.5 transition ${myReaction === emoji ? "bg-pink-100 ring-1 ring-pink-300" : "hover:bg-gray-100"}`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </motion.div>

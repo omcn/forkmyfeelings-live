@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import RecipeDetailModal from "./RecipeDetailModal";
 
 export default function SavedRecipes({ onClose }) {
   const [saved, setSaved] = useState([]);
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     try {
@@ -41,25 +43,41 @@ export default function SavedRecipes({ onClose }) {
             <p className="text-sm mt-1">Tap the heart on any recipe to save it here.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
+            <p className="text-xs text-gray-400 text-center">Tap a recipe to see the full details</p>
             {saved.map((r) => (
-              <div key={r.id} className="flex items-start justify-between gap-3 p-4 border border-pink-100 rounded-2xl bg-rose-50">
+              <motion.div
+                key={r.id}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-start justify-between gap-3 p-4 border border-pink-100 rounded-2xl bg-rose-50 cursor-pointer"
+                onClick={() => setSelected(r)}
+              >
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{r.emoji} {r.name}</p>
                   <p className="text-sm text-gray-500 line-clamp-2 mt-0.5">{r.description}</p>
                 </div>
                 <button
-                  onClick={() => remove(r.id)}
+                  onClick={(e) => { e.stopPropagation(); remove(r.id); }}
                   className="text-pink-400 hover:text-pink-600 text-xl shrink-0 mt-0.5"
                   title="Remove"
                 >
                   🗑️
                 </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
       </motion.div>
+
+      <AnimatePresence>
+        {selected && (
+          <RecipeDetailModal
+            recipeId={selected.id}
+            recipeSummary={selected}
+            onClose={() => setSelected(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -130,6 +130,22 @@ export default function ProfilePage() {
     toast("Removed from saved", { icon: "💔" });
   };
 
+  // Compute cook streak from history (consecutive days ending today/yesterday)
+  const cookStreak = (() => {
+    if (!cookHistory.length) return 0;
+    const days = [...new Set(cookHistory.map((h) => h.cookedAt.slice(0, 10)))].sort().reverse();
+    let streak = 0;
+    let check = new Date();
+    check.setHours(0, 0, 0, 0);
+    for (const day of days) {
+      const d = new Date(day);
+      const diff = Math.round((check - d) / 86400000);
+      if (diff === 0 || diff === 1) { streak++; check = d; }
+      else break;
+    }
+    return streak;
+  })();
+
   if (loading) return <div className="p-6 text-center">Loading profile...</div>;
 
   return (
@@ -154,9 +170,14 @@ export default function ProfilePage() {
         <input type="file" accept="image/*" onChange={handleAvatarUpload} className="block mt-1 text-sm text-gray-600" />
       </label>
 
-      <h1 className="text-3xl font-bold text-gray-800 my-4">
-        {profile?.username || "Your Profile"}
+      <h1 className="text-3xl font-bold text-gray-800 mt-4 mb-1">
+        {profile?.username ? `@${profile.username}` : "Your Profile"}
       </h1>
+      {cookStreak > 0 && (
+        <div className="flex items-center gap-1.5 bg-orange-100 text-orange-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">
+          🔥 {cookStreak} day{cookStreak > 1 ? "s" : ""} cooking streak!
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 mb-4 w-full max-w-md">
@@ -210,6 +231,12 @@ export default function ProfilePage() {
               className="w-full bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded-lg transition"
             >
               Sign Out
+            </button>
+            <button
+              onClick={() => router.push("/admin")}
+              className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition"
+            >
+              🛠️ Admin Panel
             </button>
           </motion.div>
         )}
