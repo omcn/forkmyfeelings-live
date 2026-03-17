@@ -27,40 +27,8 @@ import UsernamePrompt from "./components/UsernamePrompt";
 import toast from "react-hot-toast";
 
 
-// import { motion } from "framer-motion";
 
 const moodEmojis = {
-  // anxious: "😰",
-  // tired: "😴",
-  // happy: "😊",
-  // sad: "😢",
-  // angry: "😠",
-  // lonely: "😔",
-  // jealous: "😒",
-  // excited: "🤩",
-  // grateful: "🙏",
-  // overwhelmed: "😵‍💫",
-  // breakup: "💔",
-  // bored: "😐",
-  // celebrating: "🥳",
-  // working: "💼",
-  // studying: "📚",
-  // raining: "🌧️",
-  // sunny: "☀️",
-  // hungover: "🤕",
-  // traveling: "✈️",
-  // "date-night": "💘",
-  // lazy: "🛋️",
-  // energetic: "⚡",
-  // restless: "🌀",
-  // focused: "🎯",
-  // "burnt-out": "🔥",
-  // motivated: "🏃",
-  // wired: "😳",
-  // calm: "🧘",
-  // chill: "🧊",
-  // exhausted: "🥱",
-
   tired: "😴",
   happy: "😊",
   sad: "😢",
@@ -138,6 +106,10 @@ export default function Home() {
   const [showUsernamePrompt, setShowUsernamePrompt] = useState(false);
   const [feedReactions, setFeedReactions] = useState({}); // postId -> emoji string
   const [feedRefreshing, setFeedRefreshing] = useState(false);
+  const [friendIds, setFriendIds] = useState(new Set());
+  const [reactionCounts, setReactionCounts] = useState({}); // postId -> { emoji: count }
+  const [feedTab, setFeedTab] = useState("all"); // "all" | "friends"
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [savedIds, setSavedIds] = useState(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -185,20 +157,81 @@ export default function Home() {
       .select("*, profiles(username, avatar_url), recipes(name, emoji)")
       .gte("created_at", today)
       .order("created_at", { ascending: false });
-    if (!error) setPosts(data || []);
+    if (!error && data) {
+      setPosts(data);
+      if (data.length > 0 && user) {
+        const postIds = data.map((p) => p.id);
+        const { data: rxData } = await supabase
+          .from("post_reactions").select("post_id, emoji").in("post_id", postIds);
+        if (rxData) {
+          const counts = {};
+          rxData.forEach(({ post_id, emoji }) => {
+            if (!counts[post_id]) counts[post_id] = {};
+            counts[post_id][emoji] = (counts[post_id][emoji] || 0) + 1;
+          });
+          setReactionCounts(counts);
+        }
+        const { data: myRx } = await supabase
+          .from("post_reactions").select("post_id, emoji")
+          .eq("user_id", user.id).in("post_id", postIds);
+        if (myRx) {
+          const rxMap = {};
+          myRx.forEach(({ post_id, emoji }) => { rxMap[post_id] = emoji; });
+          setFeedReactions(rxMap);
+        }
+      }
+    }
     setFeedRefreshing(false);
   };
 
-  const reactToPost = (postId, emoji) => {
-    setFeedReactions((prev) => {
-      const current = prev[postId];
-      const next = current === emoji ? {} : { ...prev, [postId]: emoji };
-      localStorage.setItem("fmf_feed_reactions", JSON.stringify({ ...prev, [postId]: emoji === current ? undefined : emoji }));
-      return current === emoji ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== postId)) : { ...prev, [postId]: emoji };
+  const reactToPost = async (postId, emoji) => {
+    const current = feedReactions[postId];
+    const isRemoving = current === emoji;
+
+    // Optimistic UI update
+    const nextReactions = isRemoving
+      ? Object.fromEntries(Object.entries(feedReactions).filter(([k]) => k !== String(postId)))
+      : { ...feedReactions, [postId]: emoji };
+    setFeedReactions(nextReactions);
+    localStorage.setItem("fmf_feed_reactions", JSON.stringify(nextReactions));
+
+    // Update counts optimistically
+    setReactionCounts((prev) => {
+      const post = { ...(prev[postId] || {}) };
+      if (isRemoving) {
+        post[current] = Math.max((post[current] || 1) - 1, 0);
+      } else {
+        if (current) post[current] = Math.max((post[current] || 1) - 1, 0);
+        post[emoji] = (post[emoji] || 0) + 1;
+      }
+      return { ...prev, [postId]: post };
     });
+
+    if (!user) return;
+
+    if (isRemoving) {
+      await supabase.from("post_reactions").delete()
+        .eq("post_id", postId).eq("user_id", user.id);
+    } else {
+      await supabase.from("post_reactions").upsert(
+        { post_id: postId, user_id: user.id, emoji },
+        { onConflict: "post_id,user_id" }
+      );
+      // Notify post author
+      const reactedPost = posts.find((p) => p.id === postId);
+      if (reactedPost && reactedPost.user_id !== user.id) {
+        await supabase.from("notifications").insert({
+          user_id: reactedPost.user_id,
+          type: "reaction",
+          actor_id: user.id,
+          resource_id: String(postId),
+          read: false,
+        });
+      }
+    }
   };
 
-  const toggleFavourite = (r) => {
+  const toggleFavourite = async (r) => {
     if (!r?.id) return;
     const raw = localStorage.getItem("fmf_saved_recipes");
     const arr = raw ? JSON.parse(raw) : [];
@@ -213,91 +246,21 @@ export default function Home() {
     }
     localStorage.setItem("fmf_saved_recipes", JSON.stringify(next));
     setSavedIds(new Set(next.map((x) => x.id)));
+    // Sync to Supabase
+    if (user) {
+      if (isSaved) {
+        await supabase.from("saved_recipes").delete()
+          .eq("user_id", user.id).eq("recipe_id", r.id);
+      } else {
+        await supabase.from("saved_recipes").upsert(
+          { user_id: user.id, recipe_id: r.id },
+          { onConflict: "user_id,recipe_id" }
+        );
+      }
+    }
   };
 
-  // {showPostCapture && (
-  //   <RecipePostCapture
-  //     user={user}
-  //     recipe={recipe}
-  //     moods={selectedMoods}
-  //     rating={rating}
-  //     onComplete={() => {
-  //       setShowPostCapture(false);
-  //       handleReshuffle();
-  //     }}
-  //   />
-  // )}
-  
-  
-  
 
-  // useEffect(() => {
-  //   const getUser = async () => {
-  //     // const { data, error } = await supabase.auth.getUser();
-  //     // if (data?.user) setUser(data.user);
-  //     const { data: { session } } = await supabase.auth.getSession();
-  //     if (session?.user) setUser(session.user);
-
-  //   };
-
-  //   if (recipe) {
-  //     setMoodRating(null); // reset stars on new recipe
-  //   }
-
-  //   const loadPosts = async () => {
-  //     const today = new Date().toISOString().slice(0, 10);
-  //     const { data, error } = await supabase
-  //       .from("recipe_posts")
-  //       .select("*")
-  //       .gte("created_at", today)
-  //       .order("created_at", { ascending: false });
-  
-  //     if (!error) setPosts(data);
-  //   };
-  //   loadPosts();
-
-    
-  //   const fetchRecipes = async () => {
-  //     const { data, error } = await supabase.from("recipes").select("*");
-  //     if (error) {
-  //       console.error("Error fetching recipes:", error.message);
-  //     } else {
-  //       const formatted = {};
-  //       data.forEach((recipe) => {
-  //         const moods = typeof recipe.moods === "string"
-  //           ? JSON.parse(recipe.moods)
-  //           : recipe.moods;
-
-  //         moods.forEach((mood) => {
-  //           if (!formatted[mood]) {
-  //             formatted[mood] = [];
-  //           }
-  //           formatted[mood].push(recipe);
-  //         });
-  //       });
-
-  //       setRecipes(formatted);
-  //       console.log("Formatted recipes by mood:", formatted); // debug
-  //     }
-  //   };
-    
-
-  //   getUser();
-  //   setTimeout(() => setReadyToShowMoods(true), 300); // 300ms animation prep
-  //   fetchRecipes();
-
-  //   const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-  //     if (event === "SIGNED_IN") setUser(session.user);
-  //     if (event === "SIGNED_OUT") setUser(null);
-  //   });
-
-    
-    
-
-  //   return () => {
-  //     listener?.subscription.unsubscribe();
-  //   };
-  // }, []);
   useEffect(() => {
     if (isTiming && timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
@@ -369,13 +332,70 @@ export default function Home() {
         else localStorage.setItem("fmf_username_set", "1");
       }
 
-      // 7. Restore feed reactions from localStorage
+      if (currentUser) {
+        // 7. Load friend IDs
+        const { data: friendData } = await supabase
+          .from("friends")
+          .select("user_id, friend_id")
+          .eq("status", "accepted")
+          .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`);
+        if (friendData) {
+          setFriendIds(new Set(friendData.map((f) =>
+            f.user_id === currentUser.id ? f.friend_id : f.user_id
+          )));
+        }
+
+        // 8. Load reactions from Supabase (overrides localStorage)
+        if (postData?.length > 0) {
+          const postIds = postData.map((p) => p.id);
+          const { data: rxData } = await supabase
+            .from("post_reactions").select("post_id, emoji").in("post_id", postIds);
+          if (rxData) {
+            const counts = {};
+            rxData.forEach(({ post_id, emoji }) => {
+              if (!counts[post_id]) counts[post_id] = {};
+              counts[post_id][emoji] = (counts[post_id][emoji] || 0) + 1;
+            });
+            setReactionCounts(counts);
+          }
+          const { data: myRx } = await supabase
+            .from("post_reactions").select("post_id, emoji")
+            .eq("user_id", currentUser.id).in("post_id", postIds);
+          if (myRx) {
+            const rxMap = {};
+            myRx.forEach(({ post_id, emoji }) => { rxMap[post_id] = emoji; });
+            setFeedReactions(rxMap);
+            localStorage.setItem("fmf_feed_reactions", JSON.stringify(rxMap));
+          }
+        }
+
+        // 9. Load saved recipes from Supabase
+        const { data: savedData } = await supabase
+          .from("saved_recipes")
+          .select("recipe_id, recipes(id, name, emoji, description)")
+          .eq("user_id", currentUser.id);
+        if (savedData?.length > 0) {
+          const savedArr = savedData.map((s) => s.recipes).filter(Boolean);
+          localStorage.setItem("fmf_saved_recipes", JSON.stringify(savedArr));
+          setSavedIds(new Set(savedArr.map((r) => r.id)));
+        }
+
+        // 10. Load unread notification count
+        const { count: notifCount } = await supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", currentUser.id)
+          .eq("read", false);
+        if (notifCount) setUnreadNotifs(notifCount);
+      }
+
+      // Restore feed reactions from localStorage as fallback
       try {
         const raw = localStorage.getItem("fmf_feed_reactions");
-        if (raw) setFeedReactions(JSON.parse(raw));
+        if (raw && !feedReactions) setFeedReactions(JSON.parse(raw));
       } catch {}
 
-      // 6. Animate mood buttons after a short delay
+      // 11. Animate mood buttons after a short delay
       setTimeout(() => {
         setReadyToShowMoods(true);
         setAppLoading(false);
@@ -402,33 +422,7 @@ export default function Home() {
 
   
   
-  // const handleMultiMoodSubmit = () => {
-  //   if (selectedMoods.length === 0) return;
-  
-  //   // Combine recipes across all selected moods
-  //   const allMatchingRecipes = selectedMoods.flatMap((mood) => recipes[mood] || []);
-  
-  //   // Remove duplicates by recipe ID (in case a recipe matches multiple moods)
-  //   const uniqueRecipes = Array.from(new Map(
-  //     allMatchingRecipes.map((recipe) => [recipe.id, recipe])
-  //   ).values());
-  
-  //   // Pick a truly random one from the full pool
-  //   if (uniqueRecipes.length === 0) return;
-  //   const randomRecipe = uniqueRecipes[Math.floor(Math.random() * uniqueRecipes.length)];
-  
-  //   setRecipe(randomRecipe);
-  //   setMoodRating(0);
-  //   setCookingMode(false);
-  //   setShowSuggestionMessage(true);
-  //   setShowRecipeCard(false);
-  
-  //   setTimeout(() => {
-  //     setShowSuggestionMessage(false);
-  //     setShowRecipeCard(true);
-  //   }, 2000);
-  // };
-  
+
 
   const handleMultiMoodSubmit = async () => {
     if (selectedMoods.length === 0) {
@@ -469,12 +463,16 @@ export default function Home() {
 
     setNoRecipesFound(false);
 
+    const cookHistoryRaw = localStorage.getItem("fmf_cook_history");
+    const cookHistory = cookHistoryRaw ? JSON.parse(cookHistoryRaw) : [];
+
     const [suggestion] = getMealSuggestions({
       userRatings,
       globalRatings,
       recipes: uniqueRecipes,
       selectedMoods,
-      lastSuggestedId: Number(lastSuggestedId)
+      lastSuggestedId: Number(lastSuggestedId),
+      cookHistory,
     });
 
     if (!suggestion) {
@@ -564,7 +562,7 @@ export default function Home() {
       <AnimatePresence>{showBrowse && <RecipeBrowse onClose={() => setShowBrowse(false)} />}</AnimatePresence>
       {showRecipeCard && <NotificationPrompt />}
 
-      <div className="absolute top-4 left-4 flex items-center gap-3">
+      <div className="absolute top-4 left-4 flex items-center gap-2 flex-wrap max-w-[60vw]">
         <button
           onClick={() => setShowSaved(true)}
           className="text-2xl leading-none"
@@ -589,9 +587,32 @@ export default function Home() {
         >
           🍴 Browse
         </button>
+        <a
+          href="/leaderboard"
+          className="flex items-center gap-1 bg-white/80 hover:bg-white border border-amber-200 text-amber-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition"
+          title="Leaderboard"
+        >
+          🏆
+        </a>
+        <a
+          href="/insights"
+          className="flex items-center gap-1 bg-white/80 hover:bg-white border border-purple-200 text-purple-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition"
+          title="My Insights"
+        >
+          📊
+        </a>
       </div>
-      <div className="absolute top-4 right-4">
-        <button onClick={() => window.location.href = '/profile'}>
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        {/* Notification Bell */}
+        <a href="/notifications" className="relative text-2xl leading-none" title="Notifications">
+          🔔
+          {unreadNotifs > 0 && (
+            <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              {unreadNotifs > 9 ? "9+" : unreadNotifs}
+            </span>
+          )}
+        </a>
+        <button onClick={() => window.location.href = "/profile"}>
           <img
             src={user?.user_metadata?.avatar_url || "/rascal-fallback.png"}
             alt="Profile"
@@ -1287,7 +1308,7 @@ export default function Home() {
         transition={{ type: "spring", stiffness: 120 }}
         className="fixed inset-0 bg-white z-50 overflow-y-auto px-4 pt-6 pb-16"
       >
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-3">
           <h2 className="text-lg font-bold">📸 Today’s Forks</h2>
           <div className="flex items-center gap-2">
             <button
@@ -1306,66 +1327,101 @@ export default function Home() {
           </div>
         </div>
 
-        {posts.length === 0 ? (
-          <div className="text-center mt-16">
-            <div className="text-5xl mb-3">📭</div>
-            <p className="text-gray-500 font-medium">No posts yet today!</p>
-            <p className="text-sm text-gray-400 mt-1">Cook something and share it to be the first 🍴</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-5">
-            {posts.map((post) => {
-              const author = post.profiles;
-              const myReaction = feedReactions[post.id];
-              return (
-                <div key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  {/* Author row */}
-                  <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-                    <img
-                      src={author?.avatar_url || "/rascal-fallback.png"}
-                      alt=""
-                      className="w-8 h-8 rounded-full object-cover border border-pink-200"
-                    />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">
-                        {author?.username ? `@${author.username}` : "Anonymous Chef"}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(post.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </p>
+        {/* All / Friends tab toggle */}
+        <div className="flex gap-2 mb-4">
+          {[{ key: "all", label: "🌍 All" }, { key: "friends", label: "👥 Friends" }].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setFeedTab(t.key)}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${
+                feedTab === t.key ? "bg-pink-500 text-white shadow" : "bg-white text-gray-600 border border-pink-100"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {(() => {
+          const visiblePosts = feedTab === "friends"
+            ? posts.filter((p) => friendIds.has(p.user_id))
+            : posts;
+          return visiblePosts.length === 0 ? (
+            <div className="text-center mt-16">
+              <div className="text-5xl mb-3">{feedTab === "friends" ? "👥" : "📭"}</div>
+              <p className="text-gray-500 font-medium">
+                {feedTab === "friends" ? "No friend posts yet today!" : "No posts yet today!"}
+              </p>
+              <p className="text-sm text-gray-400 mt-1">
+                {feedTab === "friends"
+                  ? "Your friends haven’t cooked yet — or add some friends first 🤝"
+                  : "Cook something and share it to be the first 🍴"}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {visiblePosts.map((post) => {
+                const author = post.profiles;
+                const myReaction = feedReactions[post.id];
+                const rxCounts = reactionCounts[post.id] || {};
+                return (
+                  <div key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    {/* Author row */}
+                    <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+                      <a href={`/user/${post.user_id}`}>
+                        <img
+                          src={author?.avatar_url || "/rascal-fallback.png"}
+                          alt=""
+                          className="w-8 h-8 rounded-full object-cover border border-pink-200"
+                        />
+                      </a>
+                      <div>
+                        <a href={`/user/${post.user_id}`} className="text-sm font-semibold text-gray-800 hover:text-pink-600 transition">
+                          {author?.username ? `@${author.username}` : "Anonymous Chef"}
+                        </a>
+                        <p className="text-xs text-gray-400">
+                          {new Date(post.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  {/* Photo */}
-                  {post.photo_url && (
-                    <img src={post.photo_url} alt="Post" className="w-full object-cover max-h-72" />
-                  )}
-                  {/* Meta + reactions */}
-                  <div className="px-4 py-3">
-                    {post.recipes && (
-                      <p className="font-semibold text-gray-900 mb-1">{post.recipes.emoji} {post.recipes.name}</p>
+                    {/* Photo */}
+                    {post.photo_url && (
+                      <img src={post.photo_url} alt="Post" className="w-full object-cover max-h-72" />
                     )}
-                    <div className="flex items-center gap-3 text-sm text-gray-500">
-                      <span>🧠 {Array.isArray(post.moods) ? post.moods.join(", ") : post.moods}</span>
-                      {post.rating > 0 && <span>{"⭐".repeat(Math.min(post.rating, 5))}</span>}
-                    </div>
-                    {/* Emoji reactions */}
-                    <div className="flex gap-2 mt-2">
-                      {["😍", "🤤", "👏", "🔥", "❤️"].map((emoji) => (
-                        <button
-                          key={emoji}
-                          onClick={() => reactToPost(post.id, emoji)}
-                          className={`text-lg rounded-full px-2 py-0.5 transition ${myReaction === emoji ? "bg-pink-100 ring-1 ring-pink-300" : "hover:bg-gray-100"}`}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
+                    {/* Meta + reactions */}
+                    <div className="px-4 py-3">
+                      {post.recipes && (
+                        <p className="font-semibold text-gray-900 mb-1">{post.recipes.emoji} {post.recipes.name}</p>
+                      )}
+                      <div className="flex items-center gap-3 text-sm text-gray-500">
+                        <span>🧠 {Array.isArray(post.moods) ? post.moods.join(", ") : post.moods}</span>
+                        {post.rating > 0 && <span>{"⭐".repeat(Math.min(post.rating, 5))}</span>}
+                      </div>
+                      {/* Emoji reactions with counts */}
+                      <div className="flex gap-1.5 mt-2 flex-wrap">
+                        {["😍", "🤤", "👏", "🔥", "❤️"].map((emoji) => {
+                          const count = rxCounts[emoji] || 0;
+                          return (
+                            <button
+                              key={emoji}
+                              onClick={() => reactToPost(post.id, emoji)}
+                              className={`flex items-center gap-0.5 text-sm rounded-full px-2 py-0.5 transition ${
+                                myReaction === emoji ? "bg-pink-100 ring-1 ring-pink-300" : "hover:bg-gray-100"
+                              }`}
+                            >
+                              {emoji}
+                              {count > 0 && <span className="text-xs text-gray-500 ml-0.5">{count}</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          );
+        })()}
       </motion.div>
     )}
 
