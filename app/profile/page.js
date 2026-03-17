@@ -155,7 +155,34 @@ export default function ProfilePage() {
     return streak;
   })();
 
-  if (loading) return <div className="p-6 text-center">Loading profile...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center px-6 py-12">
+      {/* Avatar skeleton */}
+      <div className="w-24 h-24 rounded-full bg-pink-200 animate-pulse mb-4" />
+      <div className="w-32 h-4 bg-pink-100 rounded-full animate-pulse mb-2" />
+      <div className="w-48 h-8 bg-pink-200 rounded-full animate-pulse mb-6" />
+      {/* Tab bar skeleton */}
+      <div className="flex gap-2 mb-4 w-full max-w-md">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex-1 h-10 bg-white rounded-xl animate-pulse" />
+        ))}
+      </div>
+      {/* Content skeleton */}
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-md space-y-4">
+        <div className="h-4 bg-gray-100 rounded w-20 animate-pulse" />
+        <div className="h-10 bg-gray-50 rounded-lg animate-pulse" />
+        <div className="h-4 bg-gray-100 rounded w-12 animate-pulse" />
+        <div className="h-20 bg-gray-50 rounded-lg animate-pulse" />
+        <div className="flex gap-2">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-10 bg-pink-100 rounded-xl animate-pulse flex-1" />
+          ))}
+        </div>
+        <div className="h-10 bg-pink-200 rounded-lg animate-pulse" />
+        <div className="h-10 bg-pink-200 rounded-lg animate-pulse" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center px-6 py-12">
@@ -261,18 +288,11 @@ export default function ProfilePage() {
                 if (!confirm("Are you sure? This will permanently delete your account and all your data. This cannot be undone.")) return;
                 if (!confirm("Really delete? Last chance!")) return;
                 try {
-                  // Delete user data from Supabase tables
-                  const uid = user.id;
-                  await Promise.allSettled([
-                    supabase.from("recipe_posts").delete().eq("user_id", uid),
-                    supabase.from("recipe_ratings").delete().eq("user_id", uid),
-                    supabase.from("post_reactions").delete().eq("user_id", uid),
-                    supabase.from("saved_recipes").delete().eq("user_id", uid),
-                    supabase.from("notifications").delete().eq("user_id", uid),
-                    supabase.from("notifications").delete().eq("actor_id", uid),
-                    supabase.from("friends").delete().or(`user_id.eq.${uid},friend_id.eq.${uid}`),
-                    supabase.from("profiles").delete().eq("id", uid),
-                  ]);
+                  // Atomic cascade delete via Supabase RPC (single transaction)
+                  const { error: rpcError } = await supabase.rpc("delete_user_cascade", {
+                    target_user_id: user.id,
+                  });
+                  if (rpcError) throw rpcError;
                   // Clear localStorage
                   Object.keys(localStorage).filter((k) => k.startsWith("fmf_")).forEach((k) => localStorage.removeItem(k));
                   // Sign out
