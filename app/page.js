@@ -1222,15 +1222,6 @@ export default function Home() {
         );
       })()}
 
-    {!cookingMode && !showRecipeCard && !showRatingModal && (
-  <>
-    <button
-      onClick={() => setShowFeed(true)}
-      className="fixed bottom-6 right-6 bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-full shadow-xl z-50"
-    >
-      📸 Today’s Feed
-    </button>
-
     {showFeed && (
       <motion.div
         initial={{ y: "100%" }}
@@ -1250,9 +1241,11 @@ export default function Home() {
         </div>
 
         {posts.length === 0 ? (
-          <p className="text-gray-500 text-center mt-10">
-            No posts yet today!
-          </p>
+          <div className="text-center mt-16">
+            <div className="text-5xl mb-3">📭</div>
+            <p className="text-gray-500 font-medium">No posts yet today!</p>
+            <p className="text-sm text-gray-400 mt-1">Cook something and share it to be the first 🍴</p>
+          </div>
         ) : (
           <div className="flex flex-col gap-6">
             {posts.map((post) => (
@@ -1278,8 +1271,6 @@ export default function Home() {
         )}
       </motion.div>
     )}
-  </>
-)}
 
 
   </div> // ← make sure you're still inside this main return div
