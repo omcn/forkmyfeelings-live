@@ -380,7 +380,7 @@ export default function Home() {
 
   const handleMultiMoodSubmit = async () => {
     if (selectedMoods.length === 0) return;
-    if (!user?.id) { toast.error("Please sign in first!"); return; }
+    if (!user?.id) return;
 
     const lastSuggestedId = localStorage.getItem("lastMealId");
 
@@ -468,14 +468,14 @@ export default function Home() {
     } catch {}
   };
 
-  // Auth gate
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-rose-100 to-orange-100">
-        <AuthForm onAuthSuccess={(data) => setUser(data.user)} />
-      </div>
-    );
-  }
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Guest-friendly: prompt sign-in instead of blocking
+  const requireAuth = (action) => {
+    if (user) return true;
+    setShowAuthModal(true);
+    return false;
+  };
 
   // Loading skeleton
   if (appLoading) {
@@ -521,7 +521,7 @@ export default function Home() {
 
       {/* Top-left navigation */}
       <nav className="absolute top-4 left-4 flex items-center gap-2 flex-wrap max-w-[60vw]" aria-label="Main navigation">
-        <button onClick={() => setShowSaved(true)} className="text-2xl leading-none" aria-label="Open saved recipes">❤️</button>
+        <button onClick={() => { if (requireAuth()) setShowSaved(true); }} className="text-2xl leading-none" aria-label="Open saved recipes">❤️</button>
         <button
           onClick={() => setShowFeed(true)}
           className="flex items-center gap-1 bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition"
@@ -543,23 +543,63 @@ export default function Home() {
         <a href="/insights" className="flex items-center gap-1 bg-white/80 hover:bg-white border border-purple-200 text-purple-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition" aria-label="View my insights">📊</a>
       </nav>
 
+      {/* Auth modal for guests */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <motion.div
+            key="auth-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="relative"
+            >
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="absolute -top-3 -right-3 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-md text-gray-500 hover:text-gray-800 z-10"
+                aria-label="Close sign in"
+              >
+                ✕
+              </button>
+              <AuthForm onAuthSuccess={(data) => { setUser(data.user); setShowAuthModal(false); }} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top-right profile + notifications */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
-        <a href="/notifications" className="relative text-2xl leading-none" aria-label={`Notifications${unreadNotifs > 0 ? `, ${unreadNotifs} unread` : ""}`}>
-          🔔
-          {unreadNotifs > 0 && (
-            <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-              {unreadNotifs > 9 ? "9+" : unreadNotifs}
-            </span>
-          )}
-        </a>
-        <a href="/profile" aria-label="View profile">
-          <img
-            src={user?.user_metadata?.avatar_url || "/rascal-fallback.png"}
-            alt="Your profile"
-            className="w-12 h-12 rounded-full border-2 border-pink-400 shadow-sm object-cover"
-          />
-        </a>
+        {user ? (
+          <>
+            <a href="/notifications" className="relative text-2xl leading-none" aria-label={`Notifications${unreadNotifs > 0 ? `, ${unreadNotifs} unread` : ""}`}>
+              🔔
+              {unreadNotifs > 0 && (
+                <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {unreadNotifs > 9 ? "9+" : unreadNotifs}
+                </span>
+              )}
+            </a>
+            <a href="/profile" aria-label="View profile">
+              <img
+                src={user?.user_metadata?.avatar_url || "/rascal-fallback.png"}
+                alt="Your profile"
+                className="w-12 h-12 rounded-full border-2 border-pink-400 shadow-sm object-cover"
+              />
+            </a>
+          </>
+        ) : (
+          <button
+            onClick={() => setShowAuthModal(true)}
+            className="bg-pink-500 hover:bg-pink-600 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-sm transition"
+          >
+            Sign In
+          </button>
+        )}
       </div>
 
       <motion.h1
@@ -616,6 +656,7 @@ export default function Home() {
             disabled={selectedMoods.length === 0}
             onClick={async () => {
               if (selectedMoods.length === 0) return;
+              if (!requireAuth()) return;
               chimeSound.play();
               haptic("medium");
               await handleMultiMoodSubmit();
