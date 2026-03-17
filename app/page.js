@@ -616,8 +616,8 @@ export default function Home() {
           }}
         />
       )}
-      <AnimatePresence>{showSaved && <SavedRecipes onClose={() => setShowSaved(false)} />}</AnimatePresence>
-      <AnimatePresence>{showBrowse && <RecipeBrowse onClose={() => setShowBrowse(false)} />}</AnimatePresence>
+      <AnimatePresence>{showSaved && <SavedRecipes onClose={() => setShowSaved(false)} onMakeIt={handleMakeItFromBrowse} />}</AnimatePresence>
+      <AnimatePresence>{showBrowse && <RecipeBrowse onClose={() => setShowBrowse(false)} onMakeIt={handleMakeItFromBrowse} />}</AnimatePresence>
       {showRecipeCard && <NotificationPrompt />}
 
       <div className="absolute top-4 left-4 flex items-center gap-2 flex-wrap max-w-[60vw]">
