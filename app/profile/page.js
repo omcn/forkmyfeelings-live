@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "../../lib/supabaseClient";
 import FindFriends from "../components/FindFriends";
 import FriendRequests from "../components/FriendRequests";
@@ -155,10 +156,13 @@ export default function ProfilePage() {
       )}
 
       <div className="relative inline-block">
-        <img
+        <Image
           src={profile?.avatar_url || "/rascal-fallback.png"}
           alt="Profile"
+          width={96}
+          height={96}
           className="w-24 h-24 rounded-full border-4 border-pink-400 mb-4 object-cover"
+          unoptimized={!!profile?.avatar_url}
         />
         {incomingCount > 0 && (
           <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 border-2 border-white rounded-full" />
@@ -243,6 +247,38 @@ export default function ProfilePage() {
               className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition"
             >
               🛠️ Admin Panel
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm("Are you sure? This will permanently delete your account and all your data. This cannot be undone.")) return;
+                if (!confirm("Really delete? Last chance!")) return;
+                try {
+                  // Delete user data from Supabase tables
+                  const uid = user.id;
+                  await Promise.allSettled([
+                    supabase.from("recipe_posts").delete().eq("user_id", uid),
+                    supabase.from("recipe_ratings").delete().eq("user_id", uid),
+                    supabase.from("post_reactions").delete().eq("user_id", uid),
+                    supabase.from("saved_recipes").delete().eq("user_id", uid),
+                    supabase.from("notifications").delete().eq("user_id", uid),
+                    supabase.from("notifications").delete().eq("actor_id", uid),
+                    supabase.from("friends").delete().or(`user_id.eq.${uid},friend_id.eq.${uid}`),
+                    supabase.from("profiles").delete().eq("id", uid),
+                  ]);
+                  // Clear localStorage
+                  Object.keys(localStorage).filter((k) => k.startsWith("fmf_")).forEach((k) => localStorage.removeItem(k));
+                  // Sign out
+                  await supabase.auth.signOut();
+                  toast.success("Account deleted.");
+                  router.push("/");
+                } catch (err) {
+                  toast.error("Failed to delete account. Please contact support.");
+                  console.error(err);
+                }
+              }}
+              className="w-full text-xs text-red-400 hover:text-red-600 py-1 transition mt-4"
+            >
+              🗑️ Delete Account
             </button>
           </motion.div>
         )}

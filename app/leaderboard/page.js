@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function LeaderboardPage() {
@@ -75,6 +76,22 @@ export default function LeaderboardPage() {
       setLoading(false);
     };
     load();
+
+    // Real-time refresh when new ratings or posts come in
+    const ratingsSub = supabase
+      .channel("leaderboard-ratings")
+      .on("postgres_changes", { event: "*", schema: "public", table: "recipe_ratings" }, () => load())
+      .subscribe();
+
+    const postsSub = supabase
+      .channel("leaderboard-posts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "recipe_posts" }, () => load())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ratingsSub);
+      supabase.removeChannel(postsSub);
+    };
   }, []);
 
   const medals = ["🥇", "🥈", "🥉"];
@@ -151,10 +168,13 @@ export default function LeaderboardPage() {
           {topChefs.map((c, i) => (
             <div key={c.user_id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
               <span className="text-2xl w-8 text-center shrink-0">{medals[i] || `${i + 1}`}</span>
-              <img
+              <Image
                 src={c.profile?.avatar_url || "/rascal-fallback.png"}
                 alt=""
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full object-cover border-2 border-pink-200 shrink-0"
+                unoptimized={!!c.profile?.avatar_url}
               />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900 truncate">

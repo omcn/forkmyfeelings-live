@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { supabase } from "../../lib/supabaseClient";
 import toast from "react-hot-toast";
 
@@ -10,24 +11,26 @@ export default function FindFriends({ currentUser, onClose }) {
   const [sending, setSending] = useState(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      if (query.trim().length === 0) return setResults([]);
+    if (query.trim().length === 0) { setResults([]); return; }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, username, email, avatar_url")
-        .or(`username.ilike.%${query}%,email.ilike.%${query}%`)
-        .neq("id", currentUser.id)
-        .limit(10);
+    const timer = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, username, email, avatar_url")
+          .or(`username.ilike.%${query}%,email.ilike.%${query}%`)
+          .neq("id", currentUser.id)
+          .limit(10);
 
-      if (error) {
-        console.error("🔍 Search error:", error.message);
-      } else {
-        setResults(data);
+        if (error) throw error;
+        setResults(data || []);
+      } catch (err) {
+        console.error("Search error:", err.message);
+        toast.error("Search failed. Try again.");
       }
-    };
+    }, 300); // Debounce 300ms
 
-    fetchUsers();
+    return () => clearTimeout(timer);
   }, [query, currentUser]);
 
   const handleAccept = async (fromUserId) => {
@@ -91,10 +94,13 @@ export default function FindFriends({ currentUser, onClose }) {
         {results.map((user) => (
           <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
             <div className="flex items-center gap-3">
-              <img
+              <Image
                 src={user.avatar_url || "/rascal-fallback.png"}
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full object-cover"
-                alt={user.username}
+                alt={user.username || "User"}
+                unoptimized={!!user.avatar_url}
               />
               <span>{user.username || user.email}</span>
             </div>
@@ -115,10 +121,13 @@ export default function FindFriends({ currentUser, onClose }) {
               {incoming.map((req) => (
                 <div key={req.user_id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    <img
+                    <Image
                       src={req.profiles.avatar_url || "/rascal-fallback.png"}
+                      width={40}
+                      height={40}
                       className="w-10 h-10 rounded-full object-cover"
                       alt="avatar"
+                      unoptimized={!!req.profiles.avatar_url}
                     />
                     <span>{req.profiles.username || "Unknown User"}</span>
                   </div>

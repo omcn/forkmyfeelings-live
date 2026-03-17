@@ -1,8 +1,4 @@
 
-
-
-
-
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
@@ -16,7 +12,6 @@ import { getMealSuggestions } from "../utils/mealSuggestionEngine";
 
 import Confetti from "react-confetti";
 import { useWindowSize } from "@uidotdev/usehooks";
-import { mergeImages } from "../lib/mergeImages";
 import RascalSpaceGlide from "./components/RascalSpaceGlide";
 import Onboarding from "./components/Onboarding";
 import SavedRecipes from "./components/SavedRecipes";
@@ -64,14 +59,6 @@ function MoodTooltip({ label, children }) {
   );
 }
 
-// const rascalVideos = {
-//   sad: "/videos/rascal-sad.mp4",
-//   tired: "/videos/rascal-tired.mp4",
-//   default: "/rascal-fallback.png", // fallback image
-// };
-// const currentMood = selectedMoods[0] || "default";
-
-
 export default function Home() {
   const [appLoading, setAppLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -118,9 +105,6 @@ export default function Home() {
       return new Set(arr.map((r) => r.id));
     } catch { return new Set(); }
   });
-
-
-
 
 
 
@@ -487,11 +471,16 @@ export default function Home() {
       setDebugMessage("⚠️ No moods selected.");
       return;
     }
-  
+
+    if (!user?.id) {
+      toast.error("Please sign in first!");
+      return;
+    }
+
     setDebugMessage("⏳ Fetching ratings...");
-  
+
     const lastSuggestedId = localStorage.getItem("lastMealId");
-  
+
     const { data: userRatings, error: userError } = await supabase
       .from("recipe_ratings")
       .select("recipe_id, rating, mood")
@@ -625,6 +614,7 @@ export default function Home() {
           onClick={() => setShowSaved(true)}
           className="text-2xl leading-none"
           title="Saved recipes"
+          aria-label="Open saved recipes"
         >
           ❤️
         </button>
@@ -662,7 +652,7 @@ export default function Home() {
       </div>
       <div className="absolute top-4 right-4 flex items-center gap-2">
         {/* Notification Bell */}
-        <a href="/notifications" className="relative text-2xl leading-none" title="Notifications">
+        <a href="/notifications" className="relative text-2xl leading-none" title="Notifications" aria-label={`Notifications${unreadNotifs > 0 ? `, ${unreadNotifs} unread` : ""}`}>
           🔔
           {unreadNotifs > 0 && (
             <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
@@ -770,6 +760,10 @@ export default function Home() {
                     return (
                       <motion.button
                         key={moodKey}
+                        role="radio"
+                        aria-checked={selectedMoods.includes(moodKey)}
+                        aria-label={`${moodKey.replace("-", " ")} mood`}
+                        tabIndex={0}
                         style={{
                           position: "absolute",
                           left: x - btnWidth / 2,
@@ -789,10 +783,15 @@ export default function Home() {
                           setSelectedMoods(next);
                           if (next.length > 0) localStorage.setItem("lastMood", next[0]);
                           else localStorage.removeItem("lastMood");
-
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.currentTarget.click();
+                          }
                         }}
                         whileTap={{ scale: 0.95 }}
-                        className={`shadow-md ${isMobile ? "px-1 py-1" : "px-4 py-2"} text-base rounded-full border transition ${
+                        className={`shadow-md ${isMobile ? "px-1 py-1" : "px-4 py-2"} text-base rounded-full border transition focus:ring-2 focus:ring-pink-400 focus:outline-none ${
                           selectedMoods.includes(moodKey)
                             ? "bg-pink-200 border-pink-400"
                             : "bg-white border-gray-300 hover:bg-pink-100"
@@ -809,61 +808,8 @@ export default function Home() {
                       </motion.button>
                     );
                   })}
-
-                                  
-              
             </motion.div>
 
-            {/* Rascal reacts to mood */}
-            {/* {(() => {
-              const rascalVideos = {
-                sad: "/videos/rascal-sad.mp4",
-                tired: "/videos/rascal-tired.mp4",
-                default: "/videos/rascal-idle.mp4",
-              };
-
-              const currentMood = selectedMoods[0] || "default";
-              // const isVideo = rascalVideos[currentMood]?.endsWith(".mp4");
-              // const currentMood = selectedMoods[0];
-              const videoSrc = rascalVideos[currentMood];
-              const isVideo = Boolean(videoSrc);
-
-
-              const wrapperStyle = {
-                width: isMobile ? "200px" : "250px",
-                height: isMobile ? "200px" : "250px",
-                left: isMobile ? "38%" : "50%",
-                top: isMobile ? "45%" : "50%",
-                transform: "translate(-50%, -50%)",
-              };
-
-              return (
-                <div
-                  className="absolute z-20 rounded-full border-2 border-pink-300 shadow-lg bg-white overflow-hidden"
-                  style={wrapperStyle}
-                >
-                  {isVideo ? (
-                    <video
-                      key={currentMood}
-                      src={rascalVideos[currentMood]}
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      key="fallback"
-                      src={rascalVideos.default}
-                      alt="Rascal Mascot"
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
-              );
-            })()}
- */}
               {(() => {
                 const rascalVideos = {
                   sad: "/videos/rascal-sad.mp4",
@@ -874,10 +820,8 @@ export default function Home() {
                   overwhelmed: "/videos/rascal-overwhelmed.mp4",
                   nostalgic: "/videos/rascal-nostalgic.mp4",
                   "date-night": "/videos/rascal-date-night.mp4",
-                  hangover: "/videos/rascal-recovering.mp4",
+                  recovering: "/videos/rascal-recovering.mp4",
                   bored: "/videos/rascal-bored.mp4",
-
-                  // add more as needed
                 };
 
                 const currentMood = selectedMoods[0];
@@ -923,6 +867,8 @@ export default function Home() {
 
 
           <motion.button
+            aria-label={selectedMoods.length > 0 ? "Get recipe suggestion" : "Select a mood first"}
+            disabled={selectedMoods.length === 0}
             onClick={async () => {
               if (selectedMoods.length === 0) return;
               chimeSound.play();
