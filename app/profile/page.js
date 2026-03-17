@@ -9,6 +9,7 @@ import FriendList from "../components/FriendList";
 import toast from "react-hot-toast";
 import imageCompression from "browser-image-compression";
 import { motion, AnimatePresence } from "framer-motion";
+import RecipeDetailModal from "../components/RecipeDetailModal";
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
@@ -23,6 +24,7 @@ export default function ProfilePage() {
   const [savedRecipes, setSavedRecipes] = useState([]);
   const [cookHistory, setCookHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("profile"); // "profile" | "saved" | "history"
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function ProfilePage() {
       }
     };
 
-    // Load localStorage data
+    // Load localStorage data as initial state, then sync from Supabase
     try {
       const raw = localStorage.getItem("fmf_saved_recipes");
       setSavedRecipes(raw ? JSON.parse(raw) : []);
@@ -74,7 +76,23 @@ export default function ProfilePage() {
       setCookHistory(raw ? JSON.parse(raw) : []);
     } catch { setCookHistory([]); }
 
-    fetchProfile();
+    fetchProfile().then(async () => {
+      // Fetch saved recipes from Supabase (source of truth for logged-in users)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: savedData } = await supabase
+            .from("saved_recipes")
+            .select("recipe_id, recipes(id, name, emoji, description)")
+            .eq("user_id", session.user.id);
+          if (savedData?.length > 0) {
+            const savedArr = savedData.map((s) => s.recipes).filter(Boolean);
+            setSavedRecipes(savedArr);
+            localStorage.setItem("fmf_saved_recipes", JSON.stringify(savedArr));
+          }
+        }
+      } catch {}
+    });
     timeout = setTimeout(() => {
       if (isMounted && loading) {
         setLoading(false);
@@ -328,10 +346,14 @@ export default function ProfilePage() {
             ) : (
               savedRecipes.map((r) => (
                 <div key={r.id} className="bg-white rounded-2xl p-4 shadow-md flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
+                  <button
+                    onClick={() => setSelectedRecipe(r)}
+                    className="flex-1 min-w-0 text-left"
+                  >
                     <p className="font-semibold text-gray-900">{r.emoji} {r.name}</p>
                     <p className="text-sm text-gray-500 line-clamp-2 mt-0.5">{r.description}</p>
-                  </div>
+                    <p className="text-xs text-pink-500 mt-1.5 font-medium">Tap to view →</p>
+                  </button>
                   <button
                     onClick={() => removeSaved(r.id)}
                     className="text-pink-400 hover:text-pink-600 text-xl shrink-0"
@@ -361,7 +383,11 @@ export default function ProfilePage() {
               </div>
             ) : (
               cookHistory.map((r, i) => (
-                <div key={`${r.id}-${i}`} className="bg-white rounded-2xl p-4 shadow-md flex items-center gap-3">
+                <button
+                  key={`${r.id}-${i}`}
+                  onClick={() => setSelectedRecipe(r)}
+                  className="w-full bg-white rounded-2xl p-4 shadow-md flex items-center gap-3 text-left"
+                >
                   <span className="text-3xl">{r.emoji}</span>
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900">{r.name}</p>
@@ -369,10 +395,34 @@ export default function ProfilePage() {
                       {new Date(r.cookedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
-                </div>
+                  <span className="text-xs text-pink-500 font-medium shrink-0">View →</span>
+                </button>
               ))
             )}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedRecipe && (
+          <RecipeDetailModal
+            recipeId={selectedRecipe.id}
+            recipeSummary={selectedRecipe}
+            onClose={() => setSelectedRecipe(null)}
+            onMakeIt={(fullRecipe) => {
+              // Save to cook history
+              try {
+                const raw = localStorage.getItem("fmf_cook_history");
+                const history = raw ? JSON.parse(raw) : [];
+                const entry = { id: fullRecipe.id, name: fullRecipe.name, emoji: fullRecipe.emoji, cookedAt: new Date().toISOString() };
+                const deduped = [entry, ...history.filter((h) => h.id !== fullRecipe.id)].slice(0, 20);
+                localStorage.setItem("fmf_cook_history", JSON.stringify(deduped));
+              } catch {}
+              // Store recipe for home page to pick up in cooking mode
+              localStorage.setItem("fmf_start_cooking", JSON.stringify(fullRecipe));
+              router.push("/");
+            }}
+          />
         )}
       </AnimatePresence>
 
