@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import SupabaseAuthWatcher from "./components/SupabaseAuthWatcher";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -136,7 +137,9 @@ export default function RootLayout({ children }) {
             error:   { style: { background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca" } },
           }}
         />
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
         <footer className="mt-16 text-sm text-gray-500 text-center pb-10">
           <p>
             © {new Date().getFullYear()} Fork My Feels •{" "}

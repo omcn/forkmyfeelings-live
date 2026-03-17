@@ -1,8 +1,11 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import imageCompression from "browser-image-compression";
 import { supabase } from "../../lib/supabaseClient";
 import { mergeImages } from "../../lib/mergeImages";
 import toast from "react-hot-toast";
+
+const COMPRESS_OPTIONS = { maxSizeMB: 0.8, maxWidthOrHeight: 1200, useWebWorker: true };
 
 export default function RecipePostCapture({ user: initialUser, recipe, moods, rating, onComplete }) {
   const videoRef = useRef(null);
@@ -72,7 +75,15 @@ export default function RecipePostCapture({ user: initialUser, recipe, moods, ra
 
     setPosting(true);
     try {
-      const blob = await mergeImages(selfie, meal);
+      const rawBlob = await mergeImages(selfie, meal);
+      // Compress before upload to save storage and speed up feeds
+      let blob;
+      try {
+        const file = new File([rawBlob], "post.jpg", { type: "image/jpeg" });
+        blob = await imageCompression(file, COMPRESS_OPTIONS);
+      } catch {
+        blob = rawBlob; // Fall back to uncompressed if compression fails
+      }
       const fileName = `recipe-post-${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage

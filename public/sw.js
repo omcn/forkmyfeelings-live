@@ -1,4 +1,4 @@
-const CACHE = "fmf-v1";
+const CACHE = "fmf-v2";
 const OFFLINE_ASSETS = [
   "/",
   "/manifest.json",
@@ -28,7 +28,7 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
-// Fetch — network-first for API, cache-first for static
+// Fetch — stale-while-revalidate for static, network-first for pages
 self.addEventListener("fetch", (e) => {
   const { request } = e;
   const url = new URL(request.url);
@@ -36,31 +36,69 @@ self.addEventListener("fetch", (e) => {
   // Skip non-GET and cross-origin (Supabase, Google, etc.)
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  // Skip Next.js internal routes
-  if (url.pathname.startsWith("/_next/")) return;
-
-  e.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request)
-        .then((res) => {
-          // Only cache successful opaque-safe responses
-          if (res.ok || res.type === "opaque") {
+  // Next.js static assets — cache-first (immutable hashed filenames)
+  if (url.pathname.startsWith("/_next/static/")) {
+    e.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((res) => {
+          if (res.ok) {
             const clone = res.clone();
             caches.open(CACHE).then((c) => c.put(request, clone));
           }
           return res;
-        })
-        .catch(() => cached); // offline fallback to cache
+        });
+      })
+    );
+    return;
+  }
 
-      // Return cached instantly, update in background
-      return cached || network;
-    })
+  // Skip other _next routes (data, image optimization, etc.)
+  if (url.pathname.startsWith("/_next/")) return;
+
+  // API routes — network only
+  if (url.pathname.startsWith("/api/")) return;
+
+  // Static assets (sounds, icons, images, videos) — stale-while-revalidate
+  if (/\.(mp3|mp4|png|jpg|jpeg|webp|svg|ico|json|woff2?)$/.test(url.pathname)) {
+    e.respondWith(
+      caches.match(request).then((cached) => {
+        const network = fetch(request)
+          .then((res) => {
+            if (res.ok) {
+              const clone = res.clone();
+              caches.open(CACHE).then((c) => c.put(request, clone));
+            }
+            return res;
+          })
+          .catch(() => cached);
+        return cached || network;
+      })
+    );
+    return;
+  }
+
+  // HTML pages — network-first, fall back to cache, then offline page
+  e.respondWith(
+    fetch(request)
+      .then((res) => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then((c) => c.put(request, clone));
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(request).then((cached) =>
+          cached || caches.match("/")
+        )
+      )
   );
 });
 
 // Push notifications
 self.addEventListener("push", (e) => {
-  const data = e.data?.json() ?? { title: "Fork My Feels", body: "What's your mood today? 🍴" };
+  const data = e.data?.json() ?? { title: "Fork My Feels", body: "What's your mood today?" };
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
@@ -91,8 +129,8 @@ self.addEventListener("message", (e) => {
     if (minutes > 2) {
       _halfwayTimeout = setTimeout(() => {
         const halfLeft = Math.round(minutes / 2);
-        self.registration.showNotification("⏱️ Halfway there!", {
-          body: `About ${halfLeft} minute${halfLeft !== 1 ? "s" : ""} left on ${recipeName || "your recipe"} 🍴`,
+        self.registration.showNotification("Halfway there!", {
+          body: `About ${halfLeft} minute${halfLeft !== 1 ? "s" : ""} left on ${recipeName || "your recipe"}`,
           icon: "/icons/icon-192.png",
           badge: "/icons/icon-192.png",
           tag: "timer-halfway",
@@ -102,8 +140,8 @@ self.addEventListener("message", (e) => {
 
     // Done notification
     _timerTimeout = setTimeout(() => {
-      self.registration.showNotification("✅ Timer Done!", {
-        body: `${recipeName || "Your recipe"} is ready! Time to plate up 🍽️`,
+      self.registration.showNotification("Timer Done!", {
+        body: `${recipeName || "Your recipe"} is ready! Time to plate up`,
         icon: "/icons/icon-192.png",
         badge: "/icons/icon-192.png",
         tag: "timer-done",
