@@ -12,17 +12,34 @@ export default function FriendList({ currentUser, onClose }) {
     const fetchFriends = async () => {
       if (!profile?.id) { setLoading(false); return; }
       try {
+        // Fetch friendships where current user is either sender or receiver
         const { data, error } = await supabase
           .from("friends")
-          .select("id, user_id, friend_id, fk_user_id(username, avatar_url)")
+          .select("id, user_id, friend_id")
           .eq("status", "accepted")
           .or(`user_id.eq.${profile.id},friend_id.eq.${profile.id}`);
 
         if (error) { setError("Failed to fetch friends: " + error.message); return; }
 
+        // Resolve the "other" user's profile for each friendship
+        const otherIds = data.map((f) =>
+          f.user_id === profile.id ? f.friend_id : f.user_id
+        );
+
+        let profileMap = {};
+        if (otherIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, username, avatar_url")
+            .in("id", otherIds);
+          if (profiles) {
+            profiles.forEach((p) => { profileMap[p.id] = p; });
+          }
+        }
+
         const formatted = data.map((f) => {
-          const isSender = f.user_id === profile.id;
-          const otherProfile = isSender ? f.fk_user_id : f.fk_user_id;
+          const otherId = f.user_id === profile.id ? f.friend_id : f.user_id;
+          const otherProfile = profileMap[otherId];
           return {
             id: f.id,
             username: otherProfile?.username || "Unnamed",

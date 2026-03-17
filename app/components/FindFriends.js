@@ -10,6 +10,28 @@ export default function FindFriends({ currentUser, onClose }) {
   const [incoming, setIncoming] = useState([]);
   const [sending, setSending] = useState(null);
 
+  // Load incoming friend requests on mount
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const loadIncoming = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("friends")
+          .select("user_id, profiles:user_id(username, avatar_url)")
+          .eq("friend_id", currentUser.id)
+          .eq("status", "pending");
+
+        if (!error && data) {
+          setIncoming(data);
+        }
+      } catch (err) {
+        console.error("Failed to load friend requests:", err);
+      }
+    };
+    loadIncoming();
+  }, [currentUser]);
+
+  // Debounced search
   useEffect(() => {
     if (query.trim().length === 0) { setResults([]); return; }
 
@@ -28,7 +50,7 @@ export default function FindFriends({ currentUser, onClose }) {
         console.error("Search error:", err.message);
         toast.error("Search failed. Try again.");
       }
-    }, 300); // Debounce 300ms
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [query, currentUser]);

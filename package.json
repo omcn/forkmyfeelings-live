@@ -10,9 +10,11 @@
     "test": "jest"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.43.0",
     "@supabase/supabase-js": "^2.49.4",
     "@uidotdev/usehooks": "^2.4.1",
     "bad-words": "^4.0.0",
+    "browser-image-compression": "^2.0.2",
     "dotenv": "^16.5.0",
     "framer-motion": "^12.6.3",
     "howler": "^2.2.4",

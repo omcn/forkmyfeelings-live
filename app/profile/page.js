@@ -7,6 +7,7 @@ import FindFriends from "../components/FindFriends";
 import FriendRequests from "../components/FriendRequests";
 import FriendList from "../components/FriendList";
 import toast from "react-hot-toast";
+import imageCompression from "browser-image-compression";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ProfilePage() {
@@ -107,9 +108,16 @@ export default function ProfilePage() {
   };
 
   const handleAvatarUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file || !user) return;
-    const filePath = `${user.id}/avatar.${file.name.split(".").pop()}`;
+    const rawFile = event.target.files[0];
+    if (!rawFile || !user) return;
+    // Compress avatar before upload
+    let file;
+    try {
+      file = await imageCompression(rawFile, { maxSizeMB: 0.3, maxWidthOrHeight: 400, useWebWorker: true });
+    } catch {
+      file = rawFile;
+    }
+    const filePath = `${user.id}/avatar.${rawFile.name.split(".").pop()}`;
     try {
       const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;

@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import SupabaseAuthWatcher from "./components/SupabaseAuthWatcher";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -77,8 +78,6 @@ export const metadata = {
   viewport: {
     width: "device-width",
     initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
     viewportFit: "cover",
   },
   category: "food",
@@ -132,18 +131,26 @@ export default function RootLayout({ children }) {
           toastOptions={{
             duration: 3000,
             style: { borderRadius: "12px", fontFamily: "inherit" },
-            success: { style: { background: "#fdf2f8", color: "#9d174d", border: "1px solid #fbcfe8" } },
-            error:   { style: { background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca" } },
+            success: { style: { background: "#fdf2f8", color: "#831843", border: "1px solid #f9a8d4" } },
+            error:   { style: { background: "#fef2f2", color: "#7f1d1d", border: "1px solid #fca5a5" } },
           }}
         />
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
         <footer className="mt-16 text-sm text-gray-500 text-center pb-10">
-          <p>
-            © {new Date().getFullYear()} Fork My Feels •{" "}
-            <a href="/privacy-policy" className="underline hover:text-gray-700">
-              Privacy Policy
-            </a>
-          </p>
+          <nav aria-label="Footer navigation">
+            <p>
+              © {new Date().getFullYear()} Fork My Feels •{" "}
+              <a href="/privacy" className="underline hover:text-gray-700">
+                Privacy Policy
+              </a>{" "}
+              •{" "}
+              <a href="/terms" className="underline hover:text-gray-700">
+                Terms of Service
+              </a>
+            </p>
+          </nav>
         </footer>
       </body>
     </html>
