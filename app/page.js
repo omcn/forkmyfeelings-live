@@ -266,22 +266,26 @@ export default function Home() {
       setUser(currentUser);
 
       const today = new Date().toISOString().slice(0, 10);
-      const { data: postData, error: postError } = await supabase
-        .from("recipe_posts")
-        .select("*, profiles(username, avatar_url), recipes(name, emoji)")
-        .gte("created_at", today)
-        .order("created_at", { ascending: false });
 
-      if (!postError) setPosts(postData || []);
+      // Run independent queries in parallel
+      const [postsResult, recipesResult] = await Promise.all([
+        supabase
+          .from("recipe_posts")
+          .select("*, profiles(username, avatar_url), recipes(name, emoji)")
+          .gte("created_at", today)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("recipes")
+          .select("*")
+          .eq("status", "approved"),
+      ]);
 
-      const { data: recipeData, error: recipeError } = await supabase
-        .from("recipes")
-        .select("*")
-        .eq("status", "approved");
+      const postData = !postsResult.error ? (postsResult.data || []) : [];
+      setPosts(postData);
 
-      if (!recipeError) {
+      if (!recipesResult.error) {
         const formatted = {};
-        recipeData.forEach((recipe) => {
+        recipesResult.data.forEach((recipe) => {
           const moods = typeof recipe.moods === "string"
             ? JSON.parse(recipe.moods)
             : recipe.moods;
@@ -298,68 +302,93 @@ export default function Home() {
 
       if (!localStorage.getItem("fmf_onboarded")) setShowOnboarding(true);
 
-      if (currentUser && !localStorage.getItem("fmf_username_set")) {
-        const { data: prof } = await supabase.from("profiles").select("username").eq("id", currentUser.id).single();
-        if (!prof?.username) setShowUsernamePrompt(true);
-        else localStorage.setItem("fmf_username_set", "1");
-      }
-
+      // Run all user-specific queries in parallel
       if (currentUser) {
-        const { data: friendData } = await supabase
-          .from("friends")
-          .select("user_id, friend_id")
-          .eq("status", "accepted")
-          .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`);
-        if (friendData) {
-          setFriendIds(new Set(friendData.map((f) =>
+        const postIds = postData.length > 0 ? postData.map((p) => p.id) : [];
+
+        const userQueries = [
+          // 0: username check
+          !localStorage.getItem("fmf_username_set")
+            ? supabase.from("profiles").select("username").eq("id", currentUser.id).single()
+            : Promise.resolve({ data: { username: true } }),
+          // 1: friends
+          supabase.from("friends").select("user_id, friend_id").eq("status", "accepted")
+            .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`),
+          // 2: saved recipes
+          supabase.from("saved_recipes").select("recipe_id, recipes(id, name, emoji, description)")
+            .eq("user_id", currentUser.id),
+          // 3: notifications count
+          supabase.from("notifications").select("*", { count: "exact", head: true })
+            .eq("user_id", currentUser.id).eq("read", false),
+          // 4: reaction counts (if posts exist)
+          postIds.length > 0
+            ? supabase.from("post_reactions").select("post_id, emoji").in("post_id", postIds)
+            : Promise.resolve({ data: null }),
+          // 5: my reactions (if posts exist)
+          postIds.length > 0
+            ? supabase.from("post_reactions").select("post_id, emoji")
+                .eq("user_id", currentUser.id).in("post_id", postIds)
+            : Promise.resolve({ data: null }),
+        ];
+
+        const [profResult, friendResult, savedResult, notifResult, rxResult, myRxResult] = await Promise.all(userQueries);
+
+        // Username check
+        if (!localStorage.getItem("fmf_username_set")) {
+          if (!profResult.data?.username) setShowUsernamePrompt(true);
+          else localStorage.setItem("fmf_username_set", "1");
+        }
+
+        // Friends
+        if (friendResult.data) {
+          setFriendIds(new Set(friendResult.data.map((f) =>
             f.user_id === currentUser.id ? f.friend_id : f.user_id
           )));
         }
 
-        if (postData?.length > 0) {
-          const postIds = postData.map((p) => p.id);
-          const { data: rxData } = await supabase
-            .from("post_reactions").select("post_id, emoji").in("post_id", postIds);
-          if (rxData) {
-            const counts = {};
-            rxData.forEach(({ post_id, emoji }) => {
-              if (!counts[post_id]) counts[post_id] = {};
-              counts[post_id][emoji] = (counts[post_id][emoji] || 0) + 1;
-            });
-            setReactionCounts(counts);
-          }
-          const { data: myRx } = await supabase
-            .from("post_reactions").select("post_id, emoji")
-            .eq("user_id", currentUser.id).in("post_id", postIds);
-          if (myRx) {
-            const rxMap = {};
-            myRx.forEach(({ post_id, emoji }) => { rxMap[post_id] = emoji; });
-            setFeedReactions(rxMap);
-            localStorage.setItem("fmf_feed_reactions", JSON.stringify(rxMap));
-          }
-        }
-
-        const { data: savedData } = await supabase
-          .from("saved_recipes")
-          .select("recipe_id, recipes(id, name, emoji, description)")
-          .eq("user_id", currentUser.id);
-        if (savedData?.length > 0) {
-          const savedArr = savedData.map((s) => s.recipes).filter(Boolean);
+        // Saved recipes
+        if (savedResult.data?.length > 0) {
+          const savedArr = savedResult.data.map((s) => s.recipes).filter(Boolean);
           localStorage.setItem("fmf_saved_recipes", JSON.stringify(savedArr));
           setSavedIds(new Set(savedArr.map((r) => r.id)));
         }
 
-        const { count: notifCount } = await supabase
-          .from("notifications")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", currentUser.id)
-          .eq("read", false);
-        if (notifCount) setUnreadNotifs(notifCount);
+        // Notifications
+        if (notifResult.count) setUnreadNotifs(notifResult.count);
+
+        // Reaction counts
+        if (rxResult.data) {
+          const counts = {};
+          rxResult.data.forEach(({ post_id, emoji }) => {
+            if (!counts[post_id]) counts[post_id] = {};
+            counts[post_id][emoji] = (counts[post_id][emoji] || 0) + 1;
+          });
+          setReactionCounts(counts);
+        }
+
+        // My reactions
+        if (myRxResult.data) {
+          const rxMap = {};
+          myRxResult.data.forEach(({ post_id, emoji }) => { rxMap[post_id] = emoji; });
+          setFeedReactions(rxMap);
+          localStorage.setItem("fmf_feed_reactions", JSON.stringify(rxMap));
+        }
       }
 
       try {
         const raw = localStorage.getItem("fmf_feed_reactions");
-        if (raw) setFeedReactions(JSON.parse(raw));
+        if (raw && !currentUser) setFeedReactions(JSON.parse(raw));
+      } catch {}
+
+      // Check if redirected from profile to start cooking
+      try {
+        const startCooking = localStorage.getItem("fmf_start_cooking");
+        if (startCooking) {
+          localStorage.removeItem("fmf_start_cooking");
+          const cookRecipe = JSON.parse(startCooking);
+          setRecipe(cookRecipe);
+          setCookingMode(true);
+        }
       } catch {}
 
       setTimeout(() => {
@@ -523,7 +552,7 @@ export default function Home() {
       <nav className="absolute top-4 left-4 flex items-center gap-2 flex-wrap max-w-[60vw]" aria-label="Main navigation">
         <button onClick={() => { if (requireAuth()) setShowSaved(true); }} className="text-2xl leading-none" aria-label="Open saved recipes">❤️</button>
         <button
-          onClick={() => setShowFeed(true)}
+          onClick={() => { if (requireAuth()) setShowFeed(true); }}
           className="flex items-center gap-1 bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition"
           aria-label="Open today's feed"
         >
@@ -651,29 +680,32 @@ export default function Home() {
             haptic={haptic}
           />
 
-          <motion.button
-            aria-label={selectedMoods.length > 0 ? "Get recipe suggestion" : "Select a mood first"}
-            disabled={selectedMoods.length === 0}
-            onClick={async () => {
-              if (selectedMoods.length === 0) return;
-              if (!requireAuth()) return;
-              chimeSound.play();
-              haptic("medium");
-              await handleMultiMoodSubmit();
-            }}
-            animate={selectedMoods.length > 0
-              ? { scale: [1, 1.04, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } }
-              : { scale: 1 }
-            }
-            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-30 sm:static sm:mt-12 sm:translate-x-0 sm:left-auto sm:bottom-auto font-semibold py-5 px-14 rounded-full shadow-xl transition ${
-              selectedMoods.length > 0
-                ? "bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white"
-                : "bg-pink-200 text-pink-400 cursor-default"
-            }`}
-            whileTap={selectedMoods.length > 0 ? { scale: 0.97 } : {}}
-          >
-            {selectedMoods.length > 0 ? "Feed Me 🍴" : "Pick a mood ↑"}
-          </motion.button>
+          {/* Wrapper handles fixed positioning; button animates scale inside it */}
+          <div className="fixed bottom-6 left-0 right-0 z-30 flex justify-center sm:static sm:mt-12">
+            <motion.button
+              aria-label={selectedMoods.length > 0 ? "Get recipe suggestion" : "Select a mood first"}
+              disabled={selectedMoods.length === 0}
+              onClick={async () => {
+                if (selectedMoods.length === 0) return;
+                if (!requireAuth()) return;
+                chimeSound.play();
+                haptic("medium");
+                await handleMultiMoodSubmit();
+              }}
+              animate={selectedMoods.length > 0
+                ? { scale: [1, 1.04, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } }
+                : { scale: 1 }
+              }
+              className={`font-semibold py-5 px-14 rounded-full shadow-xl transition ${
+                selectedMoods.length > 0
+                  ? "bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white"
+                  : "bg-pink-200 text-pink-400 cursor-default"
+              }`}
+              whileTap={selectedMoods.length > 0 ? { scale: 0.97 } : {}}
+            >
+              {selectedMoods.length > 0 ? "Feed Me 🍴" : "Pick a mood ↑"}
+            </motion.button>
+          </div>
         </>
       )}
 

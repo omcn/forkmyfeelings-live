@@ -1,37 +1,43 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabaseClient";
 import RecipeDetailModal from "./RecipeDetailModal";
 
 const MOODS = ["tired", "happy", "sad", "rushed", "date-night", "chill", "recovering", "bored", "nostalgic", "overwhelmed"];
+const PAGE_SIZE = 30;
 
 export default function RecipeBrowse({ onClose, onMakeIt }) {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [filterMood, setFilterMood] = useState("");
   const [selected, setSelected] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+
+  const loadRecipes = useCallback(async (offset = 0) => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("recipes")
+        .select("*")
+        .eq("status", "approved")
+        .order("name")
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (fetchError) throw fetchError;
+      const newData = data || [];
+      if (newData.length < PAGE_SIZE) setHasMore(false);
+      setRecipes((prev) => offset === 0 ? newData : [...prev, ...newData]);
+    } catch (err) {
+      console.error("Failed to load recipes:", err);
+      setError("Could not load recipes. Please try again.");
+    }
+  }, []);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const { data, error: fetchError } = await supabase
-          .from("recipes")
-          .select("*")
-          .eq("status", "approved")
-          .order("name");
-        if (fetchError) throw fetchError;
-        setRecipes(data || []);
-      } catch (err) {
-        console.error("Failed to load recipes:", err);
-        setError("Could not load recipes. Please try again.");
-      }
-      setLoading(false);
-    };
-    load();
-  }, []);
+    loadRecipes(0).then(() => setLoading(false));
+  }, [loadRecipes]);
 
   const filtered = useMemo(() => {
     return recipes.filter((r) => {
@@ -119,6 +125,19 @@ export default function RecipeBrowse({ onClose, onMakeIt }) {
                 </div>
               </motion.button>
             ))}
+            {hasMore && !search && !filterMood && (
+              <button
+                onClick={async () => {
+                  setLoadingMore(true);
+                  await loadRecipes(recipes.length);
+                  setLoadingMore(false);
+                }}
+                disabled={loadingMore}
+                className="w-full py-3 text-sm font-semibold text-pink-600 bg-pink-50 hover:bg-pink-100 rounded-2xl transition"
+              >
+                {loadingMore ? "Loading..." : "Load More Recipes"}
+              </button>
+            )}
           </div>
         )}
       </div>
