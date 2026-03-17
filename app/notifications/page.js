@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "../../lib/supabaseClient";
 
 const TYPE_META = {
@@ -95,10 +96,13 @@ export default function NotificationsPage() {
                 }`}
               >
                 <div className="relative shrink-0">
-                  <img
+                  <Image
                     src={actor?.avatar_url || "/rascal-fallback.png"}
                     alt=""
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full object-cover border border-pink-100"
+                    unoptimized={!!actor?.avatar_url}
                   />
                   <span className="absolute -bottom-1 -right-1 text-sm">{meta.icon}</span>
                 </div>

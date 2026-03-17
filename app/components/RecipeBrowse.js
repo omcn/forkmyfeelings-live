@@ -9,18 +9,25 @@ const MOODS = ["tired", "happy", "sad", "rushed", "date-night", "chill", "recove
 export default function RecipeBrowse({ onClose, onMakeIt }) {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [filterMood, setFilterMood] = useState("");
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     const load = async () => {
-      const { data, error } = await supabase
-        .from("recipes")
-        .select("*")
-        .eq("status", "approved")
-        .order("name");
-      setRecipes(!error && data ? data : []);
+      try {
+        const { data, error: fetchError } = await supabase
+          .from("recipes")
+          .select("*")
+          .eq("status", "approved")
+          .order("name");
+        if (fetchError) throw fetchError;
+        setRecipes(data || []);
+      } catch (err) {
+        console.error("Failed to load recipes:", err);
+        setError("Could not load recipes. Please try again.");
+      }
       setLoading(false);
     };
     load();
@@ -78,6 +85,17 @@ export default function RecipeBrowse({ onClose, onMakeIt }) {
             {[...Array(6)].map((_, i) => (
               <div key={i} className="h-16 bg-pink-50 rounded-2xl animate-pulse" />
             ))}
+          </div>
+        ) : error ? (
+          <div className="text-center mt-16 text-gray-400">
+            <div className="text-5xl mb-3">😕</div>
+            <p className="font-medium">{error}</p>
+            <button
+              onClick={() => { setError(null); setLoading(true); window.location.reload(); }}
+              className="mt-3 text-sm text-pink-600 hover:text-pink-800 font-medium"
+            >
+              Retry
+            </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center mt-16 text-gray-400">

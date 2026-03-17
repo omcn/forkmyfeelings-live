@@ -5,6 +5,7 @@ export default function EatOutSuggestion({ selectedMoods }) {
   const [location, setLocation] = useState(null);
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const moodKeywords = {
     anxious: "cozy", stressed: "cozy",
@@ -20,7 +21,7 @@ export default function EatOutSuggestion({ selectedMoods }) {
     focused: "healthy", productive: "healthy",
     social: "bar", celebrating: "steakhouse",
     lonely: "diner", lazy: "brunch",
-    "date-night": "romantic", chill: "café",
+    "date-night": "romantic", chill: "caf\u00e9",
     overwhelmed: "comfort food", recovering: "soup",
     rushed: "fast food",
   };
@@ -30,12 +31,19 @@ export default function EatOutSuggestion({ selectedMoods }) {
 
   useEffect(() => {
     if (!location) {
+      if (!("geolocation" in navigator)) {
+        setError("Location is not supported by your browser.");
+        return;
+      }
       navigator.geolocation.getCurrentPosition(
         (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => console.error("Geolocation failed:", err)
+        (err) => {
+          console.error("Geolocation failed:", err);
+          setError("Could not get your location. Please enable location access.");
+        }
       );
     }
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     if (location && selectedMoods.length > 0) fetchPlaces();
@@ -43,11 +51,20 @@ export default function EatOutSuggestion({ selectedMoods }) {
 
   const fetchPlaces = async () => {
     setLoading(true);
-    const { lat, lng } = location;
-    const endpoint = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=2000&keyword=${encodeURIComponent(moodToSearch)}&type=restaurant`;
-    const response = await fetch(`/api/proxy-places?endpoint=${encodeURIComponent(endpoint)}`);
-    const data = await response.json();
-    setPlaces(data.results || []);
+    setError(null);
+    try {
+      const { lat, lng } = location;
+      const endpoint = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=2000&keyword=${encodeURIComponent(moodToSearch)}&type=restaurant`;
+      const response = await fetch(`/api/proxy-places?endpoint=${encodeURIComponent(endpoint)}`);
+      if (!response.ok) throw new Error("Failed to fetch nearby places");
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      setPlaces(data.results || []);
+    } catch (err) {
+      console.error("Places fetch error:", err);
+      setError("Could not find nearby places. Try again later.");
+      setPlaces([]);
+    }
     setLoading(false);
   };
 
@@ -56,17 +73,28 @@ export default function EatOutSuggestion({ selectedMoods }) {
       <h2 className="text-2xl font-bold mb-4">🍽️ Nearby Spots for Your Mood</h2>
       {selectedMoods.length === 0 ? (
         <p className="text-gray-600">Pick a mood to discover spots nearby!</p>
+      ) : error ? (
+        <div className="text-center py-6">
+          <div className="text-4xl mb-2">📍</div>
+          <p className="text-gray-600 text-sm">{error}</p>
+          <button
+            onClick={() => { setError(null); if (location) fetchPlaces(); }}
+            className="mt-3 text-sm text-pink-600 hover:text-pink-800 font-medium"
+          >
+            Try again
+          </button>
+        </div>
       ) : loading ? (
-        <p className="text-gray-500 animate-pulse">Finding the vibe…</p>
+        <p className="text-gray-500 animate-pulse">Finding the vibe\u2026</p>
       ) : places.length === 0 ? (
-        <p className="text-gray-600">No results found. Try again later!</p>
+        <p className="text-gray-600">No results found nearby. Try a different mood!</p>
       ) : (
         <ul className="space-y-3">
           {places.slice(0, 5).map((place) => (
             <li key={place.place_id} className="border border-gray-100 rounded-xl p-3">
               <p className="font-semibold text-gray-800">{place.name}</p>
               <p className="text-gray-500 text-sm">{place.vicinity}</p>
-              {place.rating && <p className="text-yellow-500 text-sm mt-0.5">⭐ {place.rating}</p>}
+              {place.rating && <p className="text-yellow-500 text-sm mt-0.5">\u2B50 {place.rating}</p>}
             </li>
           ))}
         </ul>
