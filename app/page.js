@@ -202,7 +202,32 @@ export default function Home() {
     let next;
     if (isSaved) {
       next = arr.filter((x) => x.id !== r.id);
-      toast("Removed from saved", { icon: "💔" });
+      // Undo toast for unsaving
+      toast(
+        (t) => (
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span>Removed {r.emoji} {r.name}</span>
+            <button
+              onClick={() => {
+                const restored = [...next, { id: r.id, name: r.name, emoji: r.emoji, description: r.description }];
+                localStorage.setItem("fmf_saved_recipes", JSON.stringify(restored));
+                setSavedIds(new Set(restored.map((x) => x.id)));
+                if (user) {
+                  supabase.from("saved_recipes").upsert(
+                    { user_id: user.id, recipe_id: r.id },
+                    { onConflict: "user_id,recipe_id" }
+                  );
+                }
+                toast.dismiss(t.id);
+              }}
+              style={{ fontWeight: "bold", color: "#ec4899", whiteSpace: "nowrap" }}
+            >
+              Undo
+            </button>
+          </div>
+        ),
+        { duration: 5000, icon: "💔" }
+      );
     } else {
       next = [...arr, { id: r.id, name: r.name, emoji: r.emoji, description: r.description }];
       toast.success("Saved! ❤️");
@@ -548,28 +573,32 @@ export default function Home() {
       <AnimatePresence>{showBrowse && <RecipeBrowse onClose={() => setShowBrowse(false)} onMakeIt={handleMakeItFromBrowse} />}</AnimatePresence>
       {showRecipeCard && <NotificationPrompt />}
 
-      {/* Top-left navigation */}
-      <nav className="absolute top-4 left-4 flex items-center gap-2 flex-wrap max-w-[60vw]" aria-label="Main navigation">
-        <button onClick={() => { if (requireAuth()) setShowSaved(true); }} className="text-2xl leading-none" aria-label="Open saved recipes">❤️</button>
+      {/* Top-left navigation — streamlined to 3 core actions */}
+      <nav className="absolute top-4 left-4 flex items-center gap-2" aria-label="Main navigation">
+        <button
+          onClick={() => { if (requireAuth()) setShowSaved(true); }}
+          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition flex items-center gap-1"
+          aria-label="Open saved recipes"
+        >
+          ❤️ Saved
+        </button>
         <button
           onClick={() => { if (requireAuth()) setShowFeed(true); }}
-          className="flex items-center gap-1 bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition"
+          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition flex items-center gap-1"
           aria-label="Open today's feed"
         >
           📸 Feed
           {posts.length > 0 && (
-            <span className="bg-pink-500 text-white text-[10px] rounded-full px-1.5 py-0.5 ml-1">{posts.length}</span>
+            <span className="bg-pink-500 text-white text-[10px] rounded-full px-1.5 py-0.5 ml-0.5">{posts.length}</span>
           )}
         </button>
         <button
           onClick={() => setShowBrowse(true)}
-          className="flex items-center gap-1 bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition"
+          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition"
           aria-label="Browse all recipes"
         >
           🍴 Browse
         </button>
-        <a href="/leaderboard" className="flex items-center gap-1 bg-white/80 hover:bg-white border border-amber-200 text-amber-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition" aria-label="View leaderboard">🏆</a>
-        <a href="/insights" className="flex items-center gap-1 bg-white/80 hover:bg-white border border-purple-200 text-purple-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm transition" aria-label="View my insights">📊</a>
       </nav>
 
       {/* Auth modal for guests */}
