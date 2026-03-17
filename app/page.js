@@ -680,8 +680,8 @@ export default function Home() {
             haptic={haptic}
           />
 
-          {/* Wrapper handles fixed positioning; button animates scale inside it */}
-          <div className="fixed bottom-6 left-0 right-0 z-30 flex justify-center sm:static sm:mt-12">
+          {/* Static centered button — no fixed positioning needed */}
+          <div className="mt-8 sm:mt-12 w-full flex justify-center">
             <motion.button
               aria-label={selectedMoods.length > 0 ? "Get recipe suggestion" : "Select a mood first"}
               disabled={selectedMoods.length === 0}
