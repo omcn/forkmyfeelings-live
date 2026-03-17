@@ -233,6 +233,12 @@ export default function ProfilePage() {
               Sign Out
             </button>
             <button
+              onClick={() => router.push("/leaderboard")}
+              className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition"
+            >
+              🏆 Leaderboard
+            </button>
+            <button
               onClick={() => router.push("/admin")}
               className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition"
             >

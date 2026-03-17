@@ -182,7 +182,7 @@ export default function Home() {
     const today = new Date().toISOString().slice(0, 10);
     const { data, error } = await supabase
       .from("recipe_posts")
-      .select("*, profiles(username, avatar_url)")
+      .select("*, profiles(username, avatar_url), recipes(name, emoji)")
       .gte("created_at", today)
       .order("created_at", { ascending: false });
     if (!error) setPosts(data || []);
@@ -318,11 +318,11 @@ export default function Home() {
       const currentUser = session?.user;
       setUser(currentUser);
   
-      // 2. Load today's posts (join author profiles for username/avatar)
+      // 2. Load today's posts (join author profiles + recipe name)
       const today = new Date().toISOString().slice(0, 10);
       const { data: postData, error: postError } = await supabase
         .from("recipe_posts")
-        .select("*, profiles(username, avatar_url)")
+        .select("*, profiles(username, avatar_url), recipes(name, emoji)")
         .gte("created_at", today)
         .order("created_at", { ascending: false });
 
@@ -1341,11 +1341,12 @@ export default function Home() {
                   )}
                   {/* Meta + reactions */}
                   <div className="px-4 py-3">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-600">
-                        <span className="mr-3">🧠 {Array.isArray(post.moods) ? post.moods.join(", ") : post.moods}</span>
-                        {post.rating > 0 && <span>{"⭐".repeat(post.rating)}</span>}
-                      </div>
+                    {post.recipes && (
+                      <p className="font-semibold text-gray-900 mb-1">{post.recipes.emoji} {post.recipes.name}</p>
+                    )}
+                    <div className="flex items-center gap-3 text-sm text-gray-500">
+                      <span>🧠 {Array.isArray(post.moods) ? post.moods.join(", ") : post.moods}</span>
+                      {post.rating > 0 && <span>{"⭐".repeat(Math.min(post.rating, 5))}</span>}
                     </div>
                     {/* Emoji reactions */}
                     <div className="flex gap-2 mt-2">
