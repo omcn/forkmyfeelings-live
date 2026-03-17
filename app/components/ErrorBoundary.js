@@ -13,6 +13,11 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     console.error("ErrorBoundary caught:", error, errorInfo);
+    // Report to Sentry if available
+    try {
+      const Sentry = require("@sentry/nextjs");
+      Sentry.captureException(error, { extra: errorInfo });
+    } catch {}
   }
 
   render() {

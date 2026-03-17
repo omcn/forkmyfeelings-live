@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.43.0",
     "@supabase/supabase-js": "^2.49.4",
     "@uidotdev/usehooks": "^2.4.1",
     "bad-words": "^4.0.0",

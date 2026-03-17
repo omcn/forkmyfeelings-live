@@ -1,0 +1,9 @@
+# Fork My Feels robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /_next/
+Disallow: /profile
+Disallow: /notifications
+
+Sitemap: https://forkmyfeelings.com/sitemap.xml
