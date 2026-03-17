@@ -1007,14 +1007,47 @@ export default function Home() {
 
       <AnimatePresence>
         {showRecipeCard && recipe && !cookingMode && (
-          <motion.div
-            key="recipe-card"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ duration: 0.6 }}
-            className="mt-8 w-full max-w-md bg-white rounded-2xl shadow-xl p-6"
-          >
+          <div className="relative mt-8 w-full max-w-md">
+            {/* Swipe hints */}
+            <motion.div
+              style={{ opacity: swipeLeftOpacity }}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400 pointer-events-none z-10 flex flex-col items-center gap-1"
+            >
+              <span className="text-2xl">🔄</span>
+              <span>Reshuffle</span>
+            </motion.div>
+            <motion.div
+              style={{ opacity: swipeRightOpacity }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-pink-400 pointer-events-none z-10 flex flex-col items-center gap-1"
+            >
+              <span className="text-2xl">❤️</span>
+              <span>Save</span>
+            </motion.div>
+
+            <motion.div
+              key="recipe-card"
+              style={{ rotate: cardRotate }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.25}
+              onDrag={(_, info) => dragX.set(info.offset.x)}
+              onDragEnd={(_, info) => {
+                dragX.set(0);
+                if (info.offset.x > 100) {
+                  haptic("success");
+                  toggleFavourite(recipe);
+                } else if (info.offset.x < -100) {
+                  haptic("light");
+                  bloopSound.play();
+                  handleReshuffle();
+                }
+              }}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white rounded-2xl shadow-xl p-6 cursor-grab active:cursor-grabbing select-none"
+            >
             <div className="flex items-start justify-between gap-2 mb-2">
               <h2 className="text-2xl font-semibold text-gray-900">
                 {recipe.emoji} {recipe.name}
