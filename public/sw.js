@@ -73,3 +73,47 @@ self.addEventListener("push", (e) => {
 self.addEventListener("notificationclick", () => {
   self.clients.openWindow("/");
 });
+
+// Timer notifications — triggered by the page when a cook timer starts
+let _timerTimeout = null;
+let _halfwayTimeout = null;
+
+self.addEventListener("message", (e) => {
+  if (e.data?.type === "TIMER_SET") {
+    const { endTime, recipeName, minutes } = e.data;
+    const delay = endTime - Date.now();
+    if (delay <= 0) return;
+
+    clearTimeout(_timerTimeout);
+    clearTimeout(_halfwayTimeout);
+
+    // Halfway reminder (only for timers longer than 2 minutes)
+    if (minutes > 2) {
+      _halfwayTimeout = setTimeout(() => {
+        const halfLeft = Math.round(minutes / 2);
+        self.registration.showNotification("⏱️ Halfway there!", {
+          body: `About ${halfLeft} minute${halfLeft !== 1 ? "s" : ""} left on ${recipeName || "your recipe"} 🍴`,
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          tag: "timer-halfway",
+        });
+      }, delay / 2);
+    }
+
+    // Done notification
+    _timerTimeout = setTimeout(() => {
+      self.registration.showNotification("✅ Timer Done!", {
+        body: `${recipeName || "Your recipe"} is ready! Time to plate up 🍽️`,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        tag: "timer-done",
+        requireInteraction: true,
+      });
+    }, delay);
+  }
+
+  if (e.data?.type === "TIMER_CLEAR") {
+    clearTimeout(_timerTimeout);
+    clearTimeout(_halfwayTimeout);
+  }
+});
