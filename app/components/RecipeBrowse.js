@@ -6,7 +6,7 @@ import RecipeDetailModal from "./RecipeDetailModal";
 
 const MOODS = ["tired", "happy", "sad", "rushed", "date-night", "chill", "recovering", "bored", "nostalgic", "overwhelmed"];
 
-export default function RecipeBrowse({ onClose }) {
+export default function RecipeBrowse({ onClose, onMakeIt }) {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -111,6 +111,7 @@ export default function RecipeBrowse({ onClose }) {
             recipeId={selected.id}
             recipeSummary={selected}
             onClose={() => setSelected(null)}
+            onMakeIt={onMakeIt ? (r) => { onMakeIt(r); onClose(); } : undefined}
           />
         )}
       </AnimatePresence>

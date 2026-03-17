@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import RecipeDetailModal from "./RecipeDetailModal";
 
-export default function SavedRecipes({ onClose }) {
+export default function SavedRecipes({ onClose, onMakeIt }) {
   const [saved, setSaved] = useState([]);
   const [selected, setSelected] = useState(null);
 
@@ -75,6 +75,7 @@ export default function SavedRecipes({ onClose }) {
             recipeId={selected.id}
             recipeSummary={selected}
             onClose={() => setSelected(null)}
+            onMakeIt={onMakeIt ? (r) => { onMakeIt(r); onClose(); } : undefined}
           />
         )}
       </AnimatePresence>

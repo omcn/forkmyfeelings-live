@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabaseClient";
 
-export default function RecipeDetailModal({ recipeId, recipeSummary, onClose }) {
+export default function RecipeDetailModal({ recipeId, recipeSummary, onClose, onMakeIt }) {
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -80,7 +80,7 @@ export default function RecipeDetailModal({ recipeId, recipeSummary, onClose }) 
             )}
 
             {steps.length > 0 && (
-              <div>
+              <div className="mb-6">
                 <h3 className="font-semibold text-gray-800 mb-2">👨‍🍳 Steps</h3>
                 <ol className="space-y-3">
                   {steps.map((step, i) => (
@@ -93,6 +93,20 @@ export default function RecipeDetailModal({ recipeId, recipeSummary, onClose }) 
                   ))}
                 </ol>
               </div>
+            )}
+
+            {onMakeIt && steps.length > 0 && (
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([10, 50, 10]);
+                  onMakeIt(recipe);
+                  onClose();
+                }}
+                className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3.5 rounded-2xl shadow-md transition text-base"
+              >
+                Let's Make It →
+              </motion.button>
             )}
           </>
         )}

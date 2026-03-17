@@ -5,7 +5,7 @@
 
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { Howl } from "howler";
 
 import AuthForm from "./components/AuthForm";
@@ -125,6 +125,40 @@ export default function Home() {
 
 
 
+
+  // Swipe motion values for recipe card
+  const dragX = useMotionValue(0);
+  const cardRotate = useTransform(dragX, [-160, 160], [-10, 10]);
+  const swipeLeftOpacity = useTransform(dragX, [-160, -20], [1, 0]);
+  const swipeRightOpacity = useTransform(dragX, [20, 160], [0, 1]);
+
+  // Haptic utility
+  const haptic = (type = "light") => {
+    if (typeof navigator === "undefined" || !navigator.vibrate) return;
+    const patterns = { light: [10], medium: [25], heavy: [50], success: [10, 50, 10], error: [200] };
+    navigator.vibrate(patterns[type] || [10]);
+  };
+
+  // Start cooking from Browse / Saved overlays
+  const handleMakeItFromBrowse = (r) => {
+    setShowBrowse(false);
+    setShowSaved(false);
+    setRecipe(r);
+    setCookingMode(true);
+    setActiveStepIndex(0);
+    setShowRecipeCard(false);
+    setShowSuggestionMessage(false);
+    setTimeLeft(null);
+    setIsTiming(false);
+    haptic("success");
+    try {
+      const raw = localStorage.getItem("fmf_cook_history");
+      const history = raw ? JSON.parse(raw) : [];
+      const entry = { id: r.id, name: r.name, emoji: r.emoji, cookedAt: new Date().toISOString() };
+      const deduped = [entry, ...history.filter((h) => h.id !== r.id)].slice(0, 20);
+      localStorage.setItem("fmf_cook_history", JSON.stringify(deduped));
+    } catch {}
+  };
 
   const clickSound = useMemo(() => new Howl({ src: ["/sounds/click.mp3"], volume: 0.4 }), []);
   const chimeSound = useMemo(() => new Howl({ src: ["/sounds/chime.mp3"], volume: 0.4 }), []);
@@ -264,12 +298,36 @@ export default function Home() {
   useEffect(() => {
     if (isTiming && timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
-      return () => clearTimeout(timer); // clear previous timeout on update
-    } else if (timeLeft === 0) {
+      return () => clearTimeout(timer);
+    } else if (isTiming && timeLeft === 0) {
       setIsTiming(false);
-      new Howl({ src: ["/sounds/chime.mp3"], volume: 0.5 }).play(); // optional
+      localStorage.removeItem("fmf_timer_end");
+      // Tell SW to cancel any pending notifications
+      navigator.serviceWorker?.controller?.postMessage({ type: "TIMER_CLEAR" });
+      new Howl({ src: ["/sounds/chime.mp3"], volume: 0.5 }).play();
+      haptic("success");
     }
   }, [timeLeft, isTiming]);
+
+  // Resync timer when user returns to the app after leaving
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      const stored = localStorage.getItem("fmf_timer_end");
+      if (!stored) return;
+      const remaining = Math.ceil((parseInt(stored) - Date.now()) / 1000);
+      if (remaining > 0) {
+        setTimeLeft(remaining);
+        setIsTiming(true);
+      } else {
+        localStorage.removeItem("fmf_timer_end");
+        setTimeLeft(0);
+        setIsTiming(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
   
 
   useEffect(() => {
@@ -726,6 +784,7 @@ export default function Home() {
                         }}
                         onClick={() => {
                           clickSound.play();
+                          haptic("light");
                           const next = selectedMoods[0] === moodKey ? [] : [moodKey];
                           setSelectedMoods(next);
                           if (next.length > 0) localStorage.setItem("lastMood", next[0]);
@@ -865,13 +924,23 @@ export default function Home() {
 
           <motion.button
             onClick={async () => {
+              if (selectedMoods.length === 0) return;
               chimeSound.play();
+              haptic("medium");
               await handleMultiMoodSubmit();
             }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 sm:static sm:mt-12 sm:translate-x-0 sm:left-auto sm:bottom-auto bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white font-semibold py-5 px-14 rounded-full shadow-xl transition"
-            whileTap={{ scale: 0.97 }}
+            animate={selectedMoods.length > 0
+              ? { scale: [1, 1.04, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } }
+              : { scale: 1 }
+            }
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-30 sm:static sm:mt-12 sm:translate-x-0 sm:left-auto sm:bottom-auto font-semibold py-5 px-14 rounded-full shadow-xl transition ${
+              selectedMoods.length > 0
+                ? "bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white"
+                : "bg-pink-200 text-pink-400 cursor-default"
+            }`}
+            whileTap={selectedMoods.length > 0 ? { scale: 0.97 } : {}}
           >
-            Feed Me 🍴
+            {selectedMoods.length > 0 ? "Feed Me 🍴" : "Pick a mood ↑"}
           </motion.button>
         </>
       )}
@@ -951,7 +1020,7 @@ export default function Home() {
                 {recipe.emoji} {recipe.name}
               </h2>
               <button
-                onClick={() => toggleFavourite(recipe)}
+                onClick={() => { haptic("success"); toggleFavourite(recipe); }}
                 className="text-2xl shrink-0 transition-transform active:scale-125"
                 title={savedIds.has(recipe.id) ? "Remove from saved" : "Save recipe"}
               >
@@ -1038,7 +1107,8 @@ export default function Home() {
               🛒 Let’s Go Shopping
             </motion.button>
 
-          </motion.div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
       {showShoppingList && recipe && (
@@ -1160,8 +1230,19 @@ export default function Home() {
                 return (
                   <button
                     onClick={() => {
-                      setTimeLeft(minutes * 60);
+                      const secs = minutes * 60;
+                      const endTime = Date.now() + secs * 1000;
+                      setTimeLeft(secs);
                       setIsTiming(true);
+                      localStorage.setItem("fmf_timer_end", endTime.toString());
+                      haptic("medium");
+                      // Fire notification via SW even if user leaves the app
+                      navigator.serviceWorker?.controller?.postMessage({
+                        type: "TIMER_SET",
+                        endTime,
+                        recipeName: recipe?.name,
+                        minutes,
+                      });
                     }}
                     className="mt-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-xl"
                   >
@@ -1211,9 +1292,10 @@ export default function Home() {
 
               {activeStepIndex < stepsArray.length - 1 ? (
                 <button
-                  onClick={() =>
-                    setActiveStepIndex((i) => Math.min(stepsArray.length - 1, i + 1))
-                  }
+                  onClick={() => {
+                    haptic("light");
+                    setActiveStepIndex((i) => Math.min(stepsArray.length - 1, i + 1));
+                  }}
                   className="text-sm text-pink-500 hover:text-pink-700"
                 >
                   Next →
