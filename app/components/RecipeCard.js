@@ -139,35 +139,35 @@ export default function RecipeCard({
           </motion.button>
         )}
 
-        <motion.button
-          onClick={() => {
-            bloopSound?.play();
-            submitRecipeRating(0);
-            onReshuffle();
-          }}
-          whileTap={{ scale: 0.96 }}
-          className="mt-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-xl transition"
-        >
-          I'm not feeling it
-        </motion.button>
-
-        {typeof navigator !== "undefined" && navigator.share && (
+        {/* Secondary actions row */}
+        <div className="mt-4 flex flex-wrap gap-2">
           <motion.button
-            onClick={onShare}
+            onClick={() => {
+              bloopSound?.play();
+              onReshuffle();
+            }}
             whileTap={{ scale: 0.96 }}
-            className="mt-3 bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-2 px-4 rounded-xl transition"
+            className="flex-1 min-w-[120px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded-xl text-sm transition"
           >
-            📤 Share Recipe
+            🔄 Reshuffle
           </motion.button>
-        )}
-
-        <motion.button
-          onClick={onShoppingList}
-          whileTap={{ scale: 0.96 }}
-          className="mt-3 bg-green-100 hover:bg-green-200 text-green-800 font-medium py-2 px-4 rounded-xl transition"
-        >
-          🛒 Let's Go Shopping
-        </motion.button>
+          <motion.button
+            onClick={onShoppingList}
+            whileTap={{ scale: 0.96 }}
+            className="flex-1 min-w-[120px] bg-green-50 hover:bg-green-100 text-green-700 font-medium py-2 px-3 rounded-xl text-sm transition"
+          >
+            🛒 Shopping List
+          </motion.button>
+          {typeof navigator !== "undefined" && navigator.share && (
+            <motion.button
+              onClick={onShare}
+              whileTap={{ scale: 0.96 }}
+              className="flex-1 min-w-[120px] bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2 px-3 rounded-xl text-sm transition"
+            >
+              📤 Share
+            </motion.button>
+          )}
+        </div>
       </motion.div>
     </div>
   );
