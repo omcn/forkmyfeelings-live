@@ -841,6 +841,8 @@ export default function Home() {
           onRefresh={refreshFeed}
           onReact={reactToPost}
           onClose={() => setShowFeed(false)}
+          isGuest={!user}
+          onRequireAuth={() => setShowAuthModal(true)}
         />
       )}
     </div>

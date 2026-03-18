@@ -21,7 +21,7 @@ export default function EatOutSuggestion({ selectedMoods }) {
     focused: "healthy", productive: "healthy",
     social: "bar", celebrating: "steakhouse",
     lonely: "diner", lazy: "brunch",
-    "date-night": "romantic", chill: "caf\u00e9",
+    "date-night": "romantic", chill: "café",
     overwhelmed: "comfort food", recovering: "soup",
     rushed: "fast food",
   };
@@ -68,9 +68,16 @@ export default function EatOutSuggestion({ selectedMoods }) {
     setLoading(false);
   };
 
+  const openInMaps = (place) => {
+    // Use universal Google Maps link that works on iOS (opens Apple Maps or Google Maps) and Android
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.place_id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="mt-8 max-w-xl w-full bg-white p-6 rounded-2xl shadow-lg">
-      <h2 className="text-2xl font-bold mb-4">🍽️ Nearby Spots for Your Mood</h2>
+      <h2 className="text-xl font-bold mb-1">🍽️ Nearby Spots</h2>
+      <p className="text-xs text-gray-400 mb-4">Based on your mood: {moodToSearch}</p>
       {selectedMoods.length === 0 ? (
         <p className="text-gray-600">Pick a mood to discover spots nearby!</p>
       ) : error ? (
@@ -85,16 +92,44 @@ export default function EatOutSuggestion({ selectedMoods }) {
           </button>
         </div>
       ) : loading ? (
-        <p className="text-gray-500 animate-pulse">Finding the vibe\u2026</p>
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-20 bg-gray-50 rounded-xl animate-pulse" />
+          ))}
+        </div>
       ) : places.length === 0 ? (
-        <p className="text-gray-600">No results found nearby. Try a different mood!</p>
+        <div className="text-center py-6">
+          <div className="text-4xl mb-2">🤷</div>
+          <p className="text-gray-600">No results found nearby.</p>
+          <p className="text-sm text-gray-400 mt-1">Try a different mood!</p>
+        </div>
       ) : (
-        <ul className="space-y-3">
-          {places.slice(0, 5).map((place) => (
-            <li key={place.place_id} className="border border-gray-100 rounded-xl p-3">
-              <p className="font-semibold text-gray-800">{place.name}</p>
-              <p className="text-gray-500 text-sm">{place.vicinity}</p>
-              {place.rating && <p className="text-yellow-500 text-sm mt-0.5">\u2B50 {place.rating}</p>}
+        <ul className="space-y-2">
+          {places.slice(0, 8).map((place) => (
+            <li key={place.place_id}>
+              <button
+                onClick={() => openInMaps(place)}
+                className="w-full text-left border border-gray-100 rounded-xl p-3.5 hover:bg-pink-50 hover:border-pink-200 active:bg-pink-100 transition flex items-center gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-800 truncate">{place.name}</p>
+                  <p className="text-gray-500 text-xs truncate">{place.vicinity}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {place.rating && (
+                      <span className="text-xs text-amber-600 font-medium">⭐ {place.rating}</span>
+                    )}
+                    {place.opening_hours?.open_now !== undefined && (
+                      <span className={`text-xs font-medium ${place.opening_hours.open_now ? "text-green-600" : "text-red-500"}`}>
+                        {place.opening_hours.open_now ? "Open now" : "Closed"}
+                      </span>
+                    )}
+                    {place.price_level && (
+                      <span className="text-xs text-gray-400">{"£".repeat(place.price_level)}</span>
+                    )}
+                  </div>
+                </div>
+                <span className="text-pink-400 text-sm shrink-0">Maps →</span>
+              </button>
             </li>
           ))}
         </ul>
