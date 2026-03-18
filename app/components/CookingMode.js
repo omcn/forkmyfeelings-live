@@ -180,15 +180,15 @@ export default function CookingMode({
               </div>
             )}
 
-            <div className="flex justify-center gap-1 mb-4">
+            <div className="flex justify-center gap-2 mb-4">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
-                  onClick={() => setMoodRating(star)}
+                  onClick={() => { setMoodRating(star); haptic("light"); }}
                   aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
-                  className={`text-2xl ${
+                  className={`text-4xl p-1 transition-transform active:scale-110 ${
                     star <= moodRating ? "text-yellow-400" : "text-gray-300"
-                  } hover:text-yellow-500 transition`}
+                  } hover:text-yellow-500`}
                 >
                   ★
                 </button>
@@ -203,17 +203,18 @@ export default function CookingMode({
                 }}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-xl transition"
               >
-                😐 Not Feeling It
+                Skip
               </button>
               <button
+                disabled={moodRating === 0}
                 onClick={() => {
                   setShowRatingModal(false);
                   submitRecipeRating(moodRating);
                   onPostCapture();
                 }}
-                className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-xl transition"
+                className="bg-pink-500 hover:bg-pink-600 disabled:bg-pink-200 disabled:text-pink-400 text-white font-semibold py-2 px-4 rounded-xl transition"
               >
-                ✅ Submit
+                {moodRating === 0 ? "Tap a star ↑" : `Submit ${moodRating}★`}
               </button>
             </div>
           </div>

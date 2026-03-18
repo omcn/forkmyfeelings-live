@@ -24,6 +24,7 @@ import RecipeCard from "./components/RecipeCard";
 import CookingMode from "./components/CookingMode";
 import ShoppingListModal from "./components/ShoppingListModal";
 import FeedOverlay from "./components/FeedOverlay";
+import OfflineIndicator from "./components/OfflineIndicator";
 
 /** Safely parse a JSON array from localStorage with validation */
 function safeParseArray(key) {
@@ -95,6 +96,11 @@ export default function Home() {
     setTimeLeft(null);
     setIsTiming(false);
     haptic("success");
+    // Cache recipe for offline cooking
+    navigator.serviceWorker?.controller?.postMessage({
+      type: "CACHE_RECIPE",
+      recipe: { ...r, steps: r.steps, ingredients: r.ingredients },
+    });
     try {
       const raw = localStorage.getItem("fmf_cook_history");
       const history = raw ? JSON.parse(raw) : [];
@@ -530,6 +536,11 @@ export default function Home() {
 
   const handleMakeIt = () => {
     setCookingMode(true);
+    // Cache recipe for offline cooking
+    navigator.serviceWorker?.controller?.postMessage({
+      type: "CACHE_RECIPE",
+      recipe: { ...recipe, steps: recipe.steps, ingredients: recipe.ingredients },
+    });
     try {
       const raw = localStorage.getItem("fmf_cook_history");
       const history = raw ? JSON.parse(raw) : [];
@@ -577,6 +588,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12 text-center font-sans overflow-x-hidden">
+      <OfflineIndicator />
       {showOnboarding && <Onboarding onDone={() => setShowOnboarding(false)} />}
       {showUsernamePrompt && user && (
         <UsernamePrompt
