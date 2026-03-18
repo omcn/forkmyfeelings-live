@@ -1,4 +1,5 @@
 const CACHE = "fmf-v2";
+const RECIPE_CACHE = "fmf-recipes";
 const OFFLINE_ASSETS = [
   "/",
   "/manifest.json",
@@ -18,11 +19,15 @@ self.addEventListener("install", (e) => {
   self.skipWaiting();
 });
 
-// Activate — remove old caches
+// Activate — remove old caches (keep recipe cache)
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter((k) => k !== CACHE && k !== RECIPE_CACHE)
+          .map((k) => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
@@ -78,7 +83,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // HTML pages — network-first, fall back to cache, then offline page
+  // HTML pages — network-first, fall back to cache with offline banner
   e.respondWith(
     fetch(request)
       .then((res) => {
@@ -88,11 +93,22 @@ self.addEventListener("fetch", (e) => {
         }
         return res;
       })
-      .catch(() =>
-        caches.match(request).then((cached) =>
-          cached || caches.match("/")
-        )
-      )
+      .catch(async () => {
+        const cached = await caches.match(request) || await caches.match("/");
+        if (!cached) return cached;
+        // Inject offline banner into cached HTML response
+        const html = await cached.text();
+        const banner =
+          '<div id="sw-offline-banner" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#fff;text-align:center;padding:6px 12px;font-size:14px;font-family:system-ui,sans-serif;">' +
+          "You're offline — cooking mode still works!" +
+          "</div>";
+        const injected = html.replace("</head>", "</head>" + banner);
+        return new Response(injected, {
+          status: cached.status,
+          statusText: cached.statusText,
+          headers: cached.headers,
+        });
+      })
   );
 });
 
@@ -153,5 +169,43 @@ self.addEventListener("message", (e) => {
   if (e.data?.type === "TIMER_CLEAR") {
     clearTimeout(_timerTimeout);
     clearTimeout(_halfwayTimeout);
+  }
+
+  // Cache recipe data for offline cooking mode
+  if (e.data?.type === "CACHE_RECIPE") {
+    const recipe = e.data.recipe;
+    if (!recipe) return;
+    e.waitUntil(
+      (async () => {
+        const cache = await caches.open(RECIPE_CACHE);
+        // Store recipe data as a synthetic JSON response
+        const recipeResponse = new Response(JSON.stringify(recipe), {
+          headers: { "Content-Type": "application/json" },
+        });
+        await cache.put(
+          new Request(`/offline-recipe/${recipe.id}`),
+          recipeResponse
+        );
+        // Pre-cache the cooking video so it's available offline
+        try {
+          const videoRequest = new Request("/videos/rascal-cooking.mp4");
+          const existing = await cache.match(videoRequest);
+          if (!existing) {
+            const videoResponse = await fetch(videoRequest);
+            if (videoResponse.ok) {
+              await cache.put(videoRequest, videoResponse);
+            }
+          }
+        } catch (err) {
+          // Video pre-cache is best-effort; don't block recipe caching
+          console.warn("SW: failed to pre-cache cooking video", err);
+        }
+      })()
+    );
+  }
+
+  // Clear the recipe cache
+  if (e.data?.type === "CLEAR_RECIPE_CACHE") {
+    e.waitUntil(caches.delete(RECIPE_CACHE));
   }
 });
