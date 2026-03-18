@@ -1,17 +1,42 @@
 "use client";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function ShoppingListModal({ recipe, onClose }) {
   const [copySuccess, setCopySuccess] = useState(false);
 
   const ingredients = Array.isArray(recipe.ingredients)
     ? recipe.ingredients
-    : JSON.parse(recipe.ingredients || "[]");
+    : (() => { try { return JSON.parse(recipe.ingredients || "[]"); } catch { return []; } })();
 
   const listText = ingredients.join("\n");
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(listText);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch {
+      // Fallback for browsers that block clipboard API
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = listText;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch {
+        toast.error("Couldn't copy — try long-pressing to select text instead");
+      }
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
       <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
         <button
           onClick={onClose}
@@ -21,22 +46,22 @@ export default function ShoppingListModal({ recipe, onClose }) {
           ✕
         </button>
         <h2 className="text-2xl font-semibold mb-4 text-center">🛍️ Shopping List</h2>
-        <ul className="list-disc list-inside text-left space-y-1 text-gray-800">
-          {ingredients.map((item, index) => (
-            <li key={index}>{item}</li>
-          ))}
-        </ul>
+        {ingredients.length === 0 ? (
+          <p className="text-center text-gray-400 py-4">No ingredients found for this recipe.</p>
+        ) : (
+          <ul className="list-disc list-inside text-left space-y-1 text-gray-800">
+            {ingredients.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+        )}
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => {
-              navigator.clipboard.writeText(listText).then(() => {
-                setCopySuccess(true);
-                setTimeout(() => setCopySuccess(false), 2000);
-              });
-            }}
-            className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-xl transition"
+            onClick={handleCopy}
+            disabled={ingredients.length === 0}
+            className="bg-pink-500 hover:bg-pink-600 disabled:bg-pink-300 text-white font-semibold py-2 px-4 rounded-xl transition flex items-center justify-center gap-1"
           >
-            📋 Copy to Clipboard
+            {copySuccess ? "✅ Copied!" : "📋 Copy to Clipboard"}
           </button>
 
           <a
@@ -46,11 +71,6 @@ export default function ShoppingListModal({ recipe, onClose }) {
           >
             💾 Save to Notes
           </a>
-          {copySuccess && (
-            <p className="text-green-600 mt-2 text-sm text-center">
-              ✅ Copied to clipboard!
-            </p>
-          )}
         </div>
       </div>
     </div>

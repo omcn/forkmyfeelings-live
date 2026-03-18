@@ -25,6 +25,20 @@ import CookingMode from "./components/CookingMode";
 import ShoppingListModal from "./components/ShoppingListModal";
 import FeedOverlay from "./components/FeedOverlay";
 
+/** Safely parse a JSON array from localStorage with validation */
+function safeParseArray(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
+  } catch {
+    try { localStorage.removeItem(key); } catch {}
+    return [];
+  }
+}
+
 export default function Home() {
   const [appLoading, setAppLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -60,13 +74,7 @@ export default function Home() {
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [savedIds, setSavedIds] = useState(() => {
     if (typeof window === "undefined") return new Set();
-    try {
-      const raw = localStorage.getItem("fmf_saved_recipes");
-      const arr = raw ? JSON.parse(raw) : [];
-      return new Set(arr.map((r) => r.id));
-    } catch {
-      return new Set();
-    }
+    return new Set(safeParseArray("fmf_saved_recipes").map((r) => r.id));
   });
 
   // Haptic utility
@@ -117,37 +125,46 @@ export default function Home() {
 
   const refreshFeed = async () => {
     setFeedRefreshing(true);
-    const today = new Date().toISOString().slice(0, 10);
-    const { data, error } = await supabase
-      .from("recipe_posts")
-      .select("*, profiles(username, avatar_url), recipes(name, emoji)")
-      .gte("created_at", today)
-      .order("created_at", { ascending: false });
-    if (!error && data) {
-      setPosts(data);
-      if (data.length > 0 && user) {
-        const postIds = data.map((p) => p.id);
-        const { data: rxData } = await supabase
-          .from("post_reactions").select("post_id, emoji").in("post_id", postIds);
-        if (rxData) {
-          const counts = {};
-          rxData.forEach(({ post_id, emoji }) => {
-            if (!counts[post_id]) counts[post_id] = {};
-            counts[post_id][emoji] = (counts[post_id][emoji] || 0) + 1;
-          });
-          setReactionCounts(counts);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("recipe_posts")
+        .select("*, profiles(username, avatar_url), recipes(name, emoji)")
+        .gte("created_at", today)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      if (data) {
+        setPosts(data);
+        if (data.length > 0 && user) {
+          const postIds = data.map((p) => p.id);
+          const [{ data: rxData }, { data: myRx }] = await Promise.all([
+            supabase.from("post_reactions").select("post_id, emoji").in("post_id", postIds),
+            supabase.from("post_reactions").select("post_id, emoji")
+              .eq("user_id", user.id).in("post_id", postIds),
+          ]);
+          if (rxData) {
+            const counts = {};
+            rxData.forEach(({ post_id, emoji }) => {
+              if (!counts[post_id]) counts[post_id] = {};
+              counts[post_id][emoji] = (counts[post_id][emoji] || 0) + 1;
+            });
+            setReactionCounts(counts);
+          }
+          if (myRx) {
+            const rxMap = {};
+            myRx.forEach(({ post_id, emoji }) => { rxMap[post_id] = emoji; });
+            setFeedReactions(rxMap);
+          }
         }
-        const { data: myRx } = await supabase
-          .from("post_reactions").select("post_id, emoji")
-          .eq("user_id", user.id).in("post_id", postIds);
-        if (myRx) {
-          const rxMap = {};
-          myRx.forEach(({ post_id, emoji }) => { rxMap[post_id] = emoji; });
-          setFeedReactions(rxMap);
-        }
+        toast.success(`Feed refreshed — ${data.length} post${data.length !== 1 ? "s" : ""}`);
       }
+    } catch (err) {
+      console.error("Feed refresh failed:", err);
+      toast.error("Couldn't refresh feed. Try again.");
+    } finally {
+      setFeedRefreshing(false);
     }
-    setFeedRefreshing(false);
   };
 
   const reactToPost = async (postId, emoji) => {
@@ -523,6 +540,7 @@ export default function Home() {
   };
 
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [feedMeLoading, setFeedMeLoading] = useState(false);
 
   // Guest-friendly: prompt sign-in instead of blocking
   const requireAuth = (action) => {
@@ -713,26 +731,33 @@ export default function Home() {
           <div className="mt-8 sm:mt-12 w-full flex justify-center">
             <motion.button
               aria-label={selectedMoods.length > 0 ? "Get recipe suggestion" : "Select a mood first"}
-              disabled={selectedMoods.length === 0}
+              disabled={selectedMoods.length === 0 || feedMeLoading}
               onClick={async () => {
-                if (selectedMoods.length === 0) return;
+                if (selectedMoods.length === 0 || feedMeLoading) return;
                 if (!requireAuth()) return;
-                chimeSound.play();
-                haptic("medium");
-                await handleMultiMoodSubmit();
+                setFeedMeLoading(true);
+                try {
+                  chimeSound.play();
+                  haptic("medium");
+                  await handleMultiMoodSubmit();
+                } finally {
+                  setFeedMeLoading(false);
+                }
               }}
-              animate={selectedMoods.length > 0
+              animate={selectedMoods.length > 0 && !feedMeLoading
                 ? { scale: [1, 1.04, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } }
                 : { scale: 1 }
               }
               className={`font-semibold py-5 px-14 rounded-full shadow-xl transition ${
-                selectedMoods.length > 0
-                  ? "bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white"
-                  : "bg-pink-200 text-pink-400 cursor-default"
+                feedMeLoading
+                  ? "bg-pink-400 text-white/80 cursor-wait"
+                  : selectedMoods.length > 0
+                    ? "bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white"
+                    : "bg-pink-200 text-pink-400 cursor-default"
               }`}
-              whileTap={selectedMoods.length > 0 ? { scale: 0.97 } : {}}
+              whileTap={selectedMoods.length > 0 && !feedMeLoading ? { scale: 0.97 } : {}}
             >
-              {selectedMoods.length > 0 ? "Feed Me 🍴" : "Pick a mood ↑"}
+              {feedMeLoading ? "Finding recipes..." : selectedMoods.length > 0 ? "Feed Me 🍴" : "Pick a mood ↑"}
             </motion.button>
           </div>
         </>

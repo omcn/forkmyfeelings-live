@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const moodEmojis = {
@@ -38,6 +38,19 @@ function MoodTooltip({ label, children }) {
 
 export { moodEmojis };
 
+const rascalVideos = {
+  sad: "/videos/rascal-sad.mp4",
+  tired: "/videos/rascal-tired.mp4",
+  chill: "/videos/rascal-chill.mp4",
+  rushed: "/videos/rascal-rushed.mp4",
+  happy: "/videos/rascal-happy1.mp4",
+  overwhelmed: "/videos/rascal-overwhelmed.mp4",
+  nostalgic: "/videos/rascal-nostalgic.mp4",
+  "date-night": "/videos/rascal-date-night.mp4",
+  recovering: "/videos/rascal-recovering.mp4",
+  bored: "/videos/rascal-bored.mp4",
+};
+
 export default function MoodSelector({
   recipes,
   selectedMoods,
@@ -53,22 +66,14 @@ export default function MoodSelector({
   const maxRadius = containerSize / 2 - btnWidth / 2 - 6;
   const radius = Math.min(containerSize * 0.44, maxRadius);
 
-  const rascalVideos = {
-    sad: "/videos/rascal-sad.mp4",
-    tired: "/videos/rascal-tired.mp4",
-    chill: "/videos/rascal-chill.mp4",
-    rushed: "/videos/rascal-rushed.mp4",
-    happy: "/videos/rascal-happy1.mp4",
-    overwhelmed: "/videos/rascal-overwhelmed.mp4",
-    nostalgic: "/videos/rascal-nostalgic.mp4",
-    "date-night": "/videos/rascal-date-night.mp4",
-    recovering: "/videos/rascal-recovering.mp4",
-    bored: "/videos/rascal-bored.mp4",
-  };
-
   const currentMood = selectedMoods[0];
-  const videoSrc = rascalVideos[currentMood] || "/videos/rascal-idle.mp4";
+  const videoSrc = useMemo(() => rascalVideos[currentMood] || "/videos/rascal-idle.mp4", [currentMood]);
   const rascalSize = Math.min(containerSize * 0.46, 250);
+
+  const moodKeys = useMemo(
+    () => Object.keys(recipes).filter((k) => k !== "default"),
+    [recipes]
+  );
 
   return (
     <div
@@ -92,63 +97,61 @@ export default function MoodSelector({
           },
         }}
       >
-        {Object.keys(recipes)
-          .filter((moodKey) => moodKey !== "default")
-          .map((moodKey, i, arr) => {
-            const total = arr.length;
-            const angle = (360 / total) * i - 90;
-            const x = radius * Math.cos((angle * Math.PI) / 180);
-            const y = radius * Math.sin((angle * Math.PI) / 180);
+        {moodKeys.map((moodKey, i) => {
+          const total = moodKeys.length;
+          const angle = (360 / total) * i - 90;
+          const x = radius * Math.cos((angle * Math.PI) / 180);
+          const y = radius * Math.sin((angle * Math.PI) / 180);
 
-            return (
-              <motion.button
-                key={moodKey}
-                role="radio"
-                aria-checked={selectedMoods.includes(moodKey)}
-                aria-label={`${moodKey.replace("-", " ")} mood`}
-                tabIndex={0}
-                style={{
-                  position: "absolute",
-                  left: x - btnWidth / 2,
-                  top: y - btnHeight / 2,
-                  width: btnWidth,
-                  height: btnHeight,
-                  borderRadius: "999px",
-                }}
-                variants={{
-                  hidden: { opacity: 0, scale: 0.8, originX: "50%", originY: "50%" },
-                  visible: { opacity: 1, scale: 1, originX: "50%", originY: "50%" },
-                }}
-                onClick={() => {
-                  clickSound?.play();
-                  haptic?.("light");
-                  const next = selectedMoods[0] === moodKey ? [] : [moodKey];
-                  onMoodChange(next);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
-                whileTap={{ scale: 0.95 }}
-                className={`shadow-md ${isMobile ? "px-1 py-1" : "px-4 py-2"} text-base rounded-full border transition focus:ring-2 focus:ring-pink-400 focus:outline-none ${
-                  selectedMoods.includes(moodKey)
-                    ? "bg-pink-200 border-pink-400"
-                    : "bg-white border-gray-300 hover:bg-pink-100"
-                }`}
-              >
-                <div className="flex flex-col items-center justify-center">
-                  <span style={{ fontSize: isMobile ? "1.2rem" : "1.5rem" }}>
-                    {moodEmojis[moodKey] || "🍽️"}
-                  </span>
-                  <span className={`${isMobile ? "text-[10px]" : "text-sm"} font-medium capitalize truncate w-full text-center block`}>
-                    {moodKey.replace("-", " ")}
-                  </span>
-                </div>
-              </motion.button>
-            );
-          })}
+          return (
+            <motion.button
+              key={moodKey}
+              role="radio"
+              aria-checked={selectedMoods.includes(moodKey)}
+              aria-label={`${moodKey.replace("-", " ")} mood`}
+              tabIndex={0}
+              style={{
+                position: "absolute",
+                left: x - btnWidth / 2,
+                top: y - btnHeight / 2,
+                width: btnWidth,
+                height: btnHeight,
+                borderRadius: "999px",
+              }}
+              variants={{
+                hidden: { opacity: 0, scale: 0.8, originX: "50%", originY: "50%" },
+                visible: { opacity: 1, scale: 1, originX: "50%", originY: "50%" },
+              }}
+              onClick={() => {
+                clickSound?.play();
+                haptic?.("light");
+                const next = selectedMoods[0] === moodKey ? [] : [moodKey];
+                onMoodChange(next);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
+              whileTap={{ scale: 0.95 }}
+              className={`shadow-md ${isMobile ? "px-1 py-1" : "px-4 py-2"} text-base rounded-full border transition focus:ring-2 focus:ring-pink-400 focus:outline-none ${
+                selectedMoods.includes(moodKey)
+                  ? "bg-pink-200 border-pink-400"
+                  : "bg-white border-gray-300 hover:bg-pink-100"
+              }`}
+            >
+              <div className="flex flex-col items-center justify-center">
+                <span style={{ fontSize: isMobile ? "1.2rem" : "1.5rem" }}>
+                  {moodEmojis[moodKey] || "🍽️"}
+                </span>
+                <span className={`${isMobile ? "text-[10px]" : "text-sm"} font-medium capitalize truncate w-full text-center block`}>
+                  {moodKey.replace("-", " ")}
+                </span>
+              </div>
+            </motion.button>
+          );
+        })}
       </motion.div>
 
       {/* Rascal center animation */}
