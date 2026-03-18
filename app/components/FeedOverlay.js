@@ -12,11 +12,21 @@ export default function FeedOverlay({
   onRefresh,
   onReact,
   onClose,
+  isGuest,
+  onRequireAuth,
 }) {
   const visiblePosts =
     feedTab === "friends"
       ? posts.filter((p) => friendIds.has(p.user_id))
       : posts;
+
+  const handleReact = (postId, emoji) => {
+    if (isGuest) {
+      onRequireAuth?.();
+      return;
+    }
+    onReact(postId, emoji);
+  };
 
   return (
     <motion.div
@@ -154,7 +164,7 @@ export default function FeedOverlay({
                       return (
                         <button
                           key={emoji}
-                          onClick={() => onReact(post.id, emoji)}
+                          onClick={() => handleReact(post.id, emoji)}
                           aria-label={`React with ${emoji}`}
                           className={`flex items-center gap-0.5 text-sm rounded-full px-2 py-0.5 transition ${
                             myReaction === emoji

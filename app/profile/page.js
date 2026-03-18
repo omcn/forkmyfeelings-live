@@ -42,6 +42,9 @@ export default function ProfilePage() {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [saving, setSaving] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(1); // 1 = first confirm, 2 = final confirm
+  const [deleting, setDeleting] = useState(false);
   const undoTimerRef = useRef(null);
   const router = useRouter();
 
@@ -538,23 +541,7 @@ export default function ProfilePage() {
                 <span className="text-sm font-medium text-gray-700">Sign Out</span>
               </button>
               <button
-                onClick={async () => {
-                  if (!confirm("Are you sure? This will permanently delete your account and all your data. This cannot be undone.")) return;
-                  if (!confirm("Really delete? Last chance!")) return;
-                  try {
-                    const { error: rpcError } = await supabase.rpc("delete_user_cascade", {
-                      target_user_id: user.id,
-                    });
-                    if (rpcError) throw rpcError;
-                    Object.keys(localStorage).filter((k) => k.startsWith("fmf_")).forEach((k) => localStorage.removeItem(k));
-                    await supabase.auth.signOut();
-                    toast.success("Account deleted.");
-                    router.push("/");
-                  } catch (err) {
-                    toast.error("Failed to delete account. Please contact support.");
-                    console.error(err);
-                  }
-                }}
+                onClick={() => { setDeleteStep(1); setShowDeleteModal(true); }}
                 className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-red-50 transition"
               >
                 <span className="text-lg">🗑️</span>
@@ -601,6 +588,89 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Delete account modal — replaces browser confirm() */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center"
+            >
+              {deleteStep === 1 ? (
+                <>
+                  <div className="text-4xl mb-3">⚠️</div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Delete your account?</h3>
+                  <p className="text-sm text-gray-500 mb-6">
+                    This will permanently delete your profile, saved recipes, cook history, posts, and friends. This cannot be undone.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowDeleteModal(false)}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => setDeleteStep(2)}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition"
+                    >
+                      Yes, Delete
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-4xl mb-3">🗑️</div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Last chance</h3>
+                  <p className="text-sm text-gray-500 mb-6">
+                    Are you really sure? There's no going back after this.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowDeleteModal(false)}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                    >
+                      Keep My Account
+                    </button>
+                    <button
+                      disabled={deleting}
+                      onClick={async () => {
+                        setDeleting(true);
+                        try {
+                          const { error: rpcError } = await supabase.rpc("delete_user_cascade", {
+                            target_user_id: user.id,
+                          });
+                          if (rpcError) throw rpcError;
+                          Object.keys(localStorage).filter((k) => k.startsWith("fmf_")).forEach((k) => localStorage.removeItem(k));
+                          await supabase.auth.signOut();
+                          toast.success("Account deleted.");
+                          router.push("/");
+                        } catch (err) {
+                          toast.error("Failed to delete. Please contact support.");
+                          console.error(err);
+                          setDeleting(false);
+                          setShowDeleteModal(false);
+                        }
+                      }}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 transition"
+                    >
+                      {deleting ? "Deleting…" : "Delete Forever"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
