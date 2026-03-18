@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabaseClient";
 export default function RecipeDetailModal({ recipeId, recipeSummary, onClose, onMakeIt }) {
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [making, setMaking] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -97,15 +98,20 @@ export default function RecipeDetailModal({ recipeId, recipeSummary, onClose, on
 
             {onMakeIt && steps.length > 0 && (
               <motion.button
-                whileTap={{ scale: 0.96 }}
+                whileTap={!making ? { scale: 0.96 } : {}}
+                disabled={making}
                 onClick={() => {
+                  if (making) return;
+                  setMaking(true);
                   if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([10, 50, 10]);
                   onMakeIt(recipe);
                   onClose();
                 }}
-                className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3.5 rounded-2xl shadow-md transition text-base"
+                className={`w-full text-white font-bold py-3.5 rounded-2xl shadow-md transition text-base ${
+                  making ? "bg-pink-400 cursor-wait" : "bg-pink-500 hover:bg-pink-600"
+                }`}
               >
-                Let's Make It →
+                {making ? "Loading..." : "Let's Make It →"}
               </motion.button>
             )}
           </>

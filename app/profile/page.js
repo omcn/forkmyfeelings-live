@@ -11,6 +11,21 @@ import imageCompression from "browser-image-compression";
 import { motion, AnimatePresence } from "framer-motion";
 import RecipeDetailModal from "../components/RecipeDetailModal";
 
+/** Safely parse a JSON array from localStorage with basic validation */
+function safeParseArray(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
+  } catch {
+    // Corrupted data — clear it and return empty
+    try { localStorage.removeItem(key); } catch {}
+    return [];
+  }
+}
+
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -26,6 +41,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("saved");
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const undoTimerRef = useRef(null);
   const router = useRouter();
 
@@ -59,6 +75,7 @@ export default function ProfilePage() {
         if (isMounted) {
           setProfile(profileData);
           setFormData({ username: profileData.username || "", bio: profileData.bio || "" });
+          if (profileData.is_admin) setIsAdmin(true);
         }
       } catch (err) {
         if (isMounted) setErrorMessage("Unexpected error. Try again later.");
@@ -69,14 +86,8 @@ export default function ProfilePage() {
     };
 
     // Load localStorage data as initial state, then sync from Supabase
-    try {
-      const raw = localStorage.getItem("fmf_saved_recipes");
-      setSavedRecipes(raw ? JSON.parse(raw) : []);
-    } catch { setSavedRecipes([]); }
-    try {
-      const raw = localStorage.getItem("fmf_cook_history");
-      setCookHistory(raw ? JSON.parse(raw) : []);
-    } catch { setCookHistory([]); }
+    setSavedRecipes(safeParseArray("fmf_saved_recipes"));
+    setCookHistory(safeParseArray("fmf_cook_history"));
 
     fetchProfile().then(async () => {
       try {
@@ -505,14 +516,16 @@ export default function ProfilePage() {
                 <span className="text-sm font-medium text-gray-700">My Insights</span>
                 <span className="ml-auto text-gray-300 text-sm">›</span>
               </button>
-              <button
-                onClick={() => router.push("/admin")}
-                className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-gray-50 transition"
-              >
-                <span className="text-lg">🛠️</span>
-                <span className="text-sm font-medium text-gray-700">Admin Panel</span>
-                <span className="ml-auto text-gray-300 text-sm">›</span>
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => router.push("/admin")}
+                  className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-gray-50 transition"
+                >
+                  <span className="text-lg">🛠️</span>
+                  <span className="text-sm font-medium text-gray-700">Admin Panel</span>
+                  <span className="ml-auto text-gray-300 text-sm">›</span>
+                </button>
+              )}
             </div>
 
             {/* Account actions */}
