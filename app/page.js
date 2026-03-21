@@ -601,39 +601,32 @@ export default function Home() {
       <AnimatePresence>{showBrowse && <RecipeBrowse onClose={() => setShowBrowse(false)} onMakeIt={handleMakeItFromBrowse} />}</AnimatePresence>
       {showRecipeCard && <NotificationPrompt />}
 
-      {/* Top navigation — icons only on mobile to avoid overlap */}
-      <nav className="absolute top-4 left-4 right-20 flex items-center gap-1.5 flex-wrap" aria-label="Main navigation">
+      {/* Top-left navigation */}
+      <nav className="absolute top-4 left-4 flex items-center gap-2" aria-label="Main navigation">
         <button
           onClick={() => { if (requireAuth()) setShowSaved(true); }}
-          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-2.5 py-2 rounded-full shadow-sm transition"
+          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition flex items-center gap-1"
           aria-label="Open saved recipes"
         >
-          ❤️
+          ❤️ Saved
         </button>
         <button
           onClick={() => { if (requireAuth()) setShowFeed(true); }}
-          className="relative bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-2.5 py-2 rounded-full shadow-sm transition"
+          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition flex items-center gap-1"
           aria-label="Open today's feed"
         >
-          📸
+          📸 Feed
           {posts.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[8px] rounded-full w-4 h-4 flex items-center justify-center font-bold">{posts.length > 9 ? "9+" : posts.length}</span>
+            <span className="bg-pink-500 text-white text-[10px] rounded-full px-1.5 py-0.5 ml-0.5">{posts.length}</span>
           )}
         </button>
         <button
           onClick={() => setShowBrowse(true)}
-          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-2.5 py-2 rounded-full shadow-sm transition"
+          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition"
           aria-label="Browse all recipes"
         >
-          🍴
+          🍴 Browse
         </button>
-        <a
-          href="/eat-out"
-          className="bg-white/80 hover:bg-white border border-purple-200 text-purple-600 text-xs font-semibold px-2.5 py-2 rounded-full shadow-sm transition"
-          aria-label="Find places to eat out"
-        >
-          🍽️
-        </a>
       </nav>
 
       {/* Auth modal for guests */}
@@ -762,6 +755,13 @@ export default function Home() {
               {feedMeLoading ? "Finding recipes..." : selectedMoods.length > 0 ? "Feed Me 🍴" : "Pick a mood ↑"}
             </motion.button>
           </div>
+
+          <a
+            href="/eat-out"
+            className="mt-4 text-sm text-purple-600 hover:text-purple-800 font-medium transition"
+          >
+            or find somewhere to eat out 🍽️
+          </a>
         </>
       )}
 
