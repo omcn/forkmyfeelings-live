@@ -94,7 +94,9 @@ export default function EatOutPage() {
       toast.error("Waiting for your location...");
       return;
     }
-    const url = `https://maps.apple.com/?q=${encodeURIComponent(searchTerm)}&near=${location.lat},${location.lng}&z=14`;
+    // Use sll (search lat/lng) + spn (span) to force Apple Maps to search near the user's location
+    // This prevents it from jumping to a random country
+    const url = `https://maps.apple.com/?q=${encodeURIComponent(searchTerm)}&sll=${location.lat},${location.lng}&spn=0.05,0.05&z=14`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
