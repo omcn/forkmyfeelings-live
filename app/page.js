@@ -601,38 +601,38 @@ export default function Home() {
       <AnimatePresence>{showBrowse && <RecipeBrowse onClose={() => setShowBrowse(false)} onMakeIt={handleMakeItFromBrowse} />}</AnimatePresence>
       {showRecipeCard && <NotificationPrompt />}
 
-      {/* Top-left navigation */}
-      <nav className="absolute top-4 left-4 flex items-center gap-2" aria-label="Main navigation">
+      {/* Top navigation — icons only on mobile to avoid overlap */}
+      <nav className="absolute top-4 left-4 right-20 flex items-center gap-1.5 flex-wrap" aria-label="Main navigation">
         <button
           onClick={() => { if (requireAuth()) setShowSaved(true); }}
-          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition flex items-center gap-1"
+          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-2.5 py-2 rounded-full shadow-sm transition"
           aria-label="Open saved recipes"
         >
-          ❤️ Saved
+          ❤️
         </button>
         <button
           onClick={() => { if (requireAuth()) setShowFeed(true); }}
-          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition flex items-center gap-1"
+          className="relative bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-2.5 py-2 rounded-full shadow-sm transition"
           aria-label="Open today's feed"
         >
-          📸 Feed
+          📸
           {posts.length > 0 && (
-            <span className="bg-pink-500 text-white text-[10px] rounded-full px-1.5 py-0.5 ml-0.5">{posts.length}</span>
+            <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[8px] rounded-full w-4 h-4 flex items-center justify-center font-bold">{posts.length > 9 ? "9+" : posts.length}</span>
           )}
         </button>
         <button
           onClick={() => setShowBrowse(true)}
-          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition"
+          className="bg-white/80 hover:bg-white border border-pink-200 text-pink-600 text-xs font-semibold px-2.5 py-2 rounded-full shadow-sm transition"
           aria-label="Browse all recipes"
         >
-          🍴 Browse
+          🍴
         </button>
         <a
           href="/eat-out"
-          className="bg-white/80 hover:bg-white border border-purple-200 text-purple-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition"
+          className="bg-white/80 hover:bg-white border border-purple-200 text-purple-600 text-xs font-semibold px-2.5 py-2 rounded-full shadow-sm transition"
           aria-label="Find places to eat out"
         >
-          🍽️ Eat Out
+          🍽️
         </a>
       </nav>
 
