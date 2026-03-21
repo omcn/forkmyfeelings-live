@@ -5,24 +5,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 
 const moodFilters = [
-  { key: "all", label: "🍽️ All", search: "restaurant" },
-  { key: "cozy", label: "🛋️ Cozy", search: "cozy restaurant" },
-  { key: "romantic", label: "💘 Date Night", search: "romantic restaurant" },
+  { key: "all", label: "🍽️ All", search: "restaurants" },
+  { key: "cozy", label: "🛋️ Cozy", search: "cafe" },
+  { key: "romantic", label: "💘 Date Night", search: "fine dining" },
   { key: "coffee", label: "☕ Coffee", search: "coffee shop" },
   { key: "brunch", label: "🥞 Brunch", search: "brunch" },
-  { key: "healthy", label: "🥗 Healthy", search: "healthy restaurant" },
+  { key: "healthy", label: "🥗 Healthy", search: "salad bar" },
   { key: "fast", label: "🍔 Quick Bites", search: "fast food" },
-  { key: "spicy", label: "🌶️ Spicy", search: "spicy food restaurant" },
-  { key: "dessert", label: "🍰 Dessert", search: "dessert cafe" },
-  { key: "bar", label: "🍸 Drinks", search: "bar cocktails" },
-  { key: "international", label: "🌍 World Food", search: "international restaurant" },
+  { key: "spicy", label: "🌶️ Spicy", search: "thai food" },
+  { key: "dessert", label: "🍰 Dessert", search: "bakery" },
+  { key: "bar", label: "🍸 Drinks", search: "cocktail bar" },
+  { key: "international", label: "🌍 World Food", search: "world cuisine" },
   { key: "diner", label: "🍳 Diner", search: "diner" },
   { key: "steakhouse", label: "🥩 Steak", search: "steakhouse" },
-  { key: "sushi", label: "🍣 Sushi", search: "sushi restaurant" },
-  { key: "pizza", label: "🍕 Pizza", search: "pizza restaurant" },
-  { key: "chinese", label: "🥡 Chinese", search: "chinese restaurant" },
-  { key: "indian", label: "🍛 Indian", search: "indian restaurant" },
-  { key: "mexican", label: "🌮 Mexican", search: "mexican restaurant" },
+  { key: "sushi", label: "🍣 Sushi", search: "sushi" },
+  { key: "pizza", label: "🍕 Pizza", search: "pizza" },
+  { key: "chinese", label: "🥡 Chinese", search: "chinese food" },
+  { key: "indian", label: "🍛 Indian", search: "indian food" },
+  { key: "mexican", label: "🌮 Mexican", search: "mexican food" },
 ];
 
 // Mood-to-vibe mapping for auto-suggesting filters
@@ -94,9 +94,10 @@ export default function EatOutPage() {
       toast.error("Waiting for your location...");
       return;
     }
-    // Use sll (search lat/lng) + spn (span) to force Apple Maps to search near the user's location
-    // This prevents it from jumping to a random country
-    const url = `https://maps.apple.com/?q=${encodeURIComponent(searchTerm)}&sll=${location.lat},${location.lng}&spn=0.05,0.05&z=14`;
+    // Append "near me" to force local results — without this, Apple Maps
+    // treats descriptive terms like "cozy restaurant" as place names and
+    // jumps to named businesses in other countries
+    const url = `https://maps.apple.com/?q=${encodeURIComponent(searchTerm + " near me")}&sll=${location.lat},${location.lng}&spn=0.05,0.05&z=14`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
