@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Howl } from "howler";
 
 import AuthForm from "./components/AuthForm";
-import EatOutSuggestions from "./components/EatOutSuggestion";
 import RecipePostCapture from "./components/RecipePostCapture";
 import { supabase } from "../lib/supabaseClient";
 import { getMealSuggestions } from "../utils/mealSuggestionEngine";
@@ -50,7 +49,6 @@ export default function Home() {
   const [showSuggestionMessage, setShowSuggestionMessage] = useState(false);
   const [showRecipeCard, setShowRecipeCard] = useState(false);
   const [user, setUser] = useState(null);
-  const [eatOutMode, setEatOutMode] = useState(false);
   const [readyToShowMoods, setReadyToShowMoods] = useState(false);
   const { width: windowWidth } = useWindowSize();
   const isMobile = (windowWidth || 0) < 768;
@@ -603,7 +601,7 @@ export default function Home() {
       <AnimatePresence>{showBrowse && <RecipeBrowse onClose={() => setShowBrowse(false)} onMakeIt={handleMakeItFromBrowse} />}</AnimatePresence>
       {showRecipeCard && <NotificationPrompt />}
 
-      {/* Top-left navigation — streamlined to 3 core actions */}
+      {/* Top-left navigation */}
       <nav className="absolute top-4 left-4 flex items-center gap-2" aria-label="Main navigation">
         <button
           onClick={() => { if (requireAuth()) setShowSaved(true); }}
@@ -629,6 +627,13 @@ export default function Home() {
         >
           🍴 Browse
         </button>
+        <a
+          href="/eat-out"
+          className="bg-white/80 hover:bg-white border border-purple-200 text-purple-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition"
+          aria-label="Find places to eat out"
+        >
+          🍽️ Eat Out
+        </a>
       </nav>
 
       {/* Auth modal for guests */}
@@ -710,21 +715,6 @@ export default function Home() {
 
       {readyToShowMoods && !cookingMode && !showSuggestionMessage && !showRecipeCard && (
         <>
-          <motion.button
-            onClick={() => {
-              bloopSound.play();
-              const turningOn = !eatOutMode;
-              setEatOutMode(turningOn);
-              if (turningOn && "geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(() => {}, () => {});
-              }
-            }}
-            whileTap={{ scale: 0.97 }}
-            className="mb-8 bg-purple-200 hover:bg-purple-300 text-purple-800 font-semibold py-4 px-8 rounded-full shadow-sm transition"
-          >
-            {eatOutMode ? "Back to Mood Recipes" : "I'm Eating Out 🍽️"}
-          </motion.button>
-
           <MoodSelector
             recipes={recipes}
             selectedMoods={selectedMoods}
@@ -821,7 +811,6 @@ export default function Home() {
 
       {showShoppingList && recipe && <ShoppingListModal recipe={recipe} onClose={() => setShowShoppingList(false)} />}
 
-      {eatOutMode && <EatOutSuggestions selectedMoods={selectedMoods} />}
 
       {cookingMode && recipe && (
         <CookingMode
