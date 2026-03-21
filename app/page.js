@@ -627,13 +627,6 @@ export default function Home() {
         >
           🍴 Browse
         </button>
-        <a
-          href="/eat-out"
-          className="bg-white/80 hover:bg-white border border-purple-200 text-purple-600 text-xs font-semibold px-3 py-2 rounded-full shadow-sm transition"
-          aria-label="Find places to eat out"
-        >
-          🍽️ Eat Out
-        </a>
       </nav>
 
       {/* Auth modal for guests */}
@@ -762,6 +755,13 @@ export default function Home() {
               {feedMeLoading ? "Finding recipes..." : selectedMoods.length > 0 ? "Feed Me 🍴" : "Pick a mood ↑"}
             </motion.button>
           </div>
+
+          <a
+            href="/eat-out"
+            className="mt-4 text-sm text-purple-600 hover:text-purple-800 font-medium transition"
+          >
+            or find somewhere to eat out 🍽️
+          </a>
         </>
       )}
 
