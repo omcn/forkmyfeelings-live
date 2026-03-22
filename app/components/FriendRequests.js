@@ -39,7 +39,7 @@ export default function FriendRequests({ currentUser }) {
             <img
               src={req.profile?.avatar_url || "/rascal-fallback.png"}
               className="w-10 h-10 rounded-full object-cover"
-              alt=""
+              alt={`${req.profile?.username || "User"}'s avatar`}
             />
             <span className="font-medium text-gray-800">@{req.profile?.username || "Unknown"}</span>
           </div>

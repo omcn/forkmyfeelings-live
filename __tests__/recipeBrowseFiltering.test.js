@@ -6,7 +6,12 @@ function filterRecipes(recipes, search, filterMood) {
       !search ||
       r.name.toLowerCase().includes(search.toLowerCase()) ||
       r.description?.toLowerCase().includes(search.toLowerCase());
-    const moods = Array.isArray(r.moods) ? r.moods : JSON.parse(r.moods || "[]");
+    let moods;
+    try {
+      moods = Array.isArray(r.moods) ? r.moods : JSON.parse(r.moods || "[]");
+    } catch {
+      moods = [];
+    }
     const matchMood = !filterMood || moods.includes(filterMood);
     return matchSearch && matchMood;
   });
@@ -115,10 +120,11 @@ describe("Edge cases", () => {
     expect(filterRecipes(recipes, "", "happy")).toHaveLength(0);
   });
 
-  test("recipe with corrupted moods JSON throws (known limitation)", () => {
+  test("recipe with corrupted moods JSON is handled gracefully", () => {
     const recipes = [{ id: 99, name: "Test", description: "test", moods: "{broken" }];
-    // Note: the actual app code doesn't try/catch JSON.parse on moods — this is a known gap
-    expect(() => filterRecipes(recipes, "", "happy")).toThrow();
+    // Bug was fixed: try/catch now wraps JSON.parse, corrupted moods → empty array
+    expect(() => filterRecipes(recipes, "", "happy")).not.toThrow();
+    expect(filterRecipes(recipes, "", "happy")).toHaveLength(0);
   });
 
   test("empty recipes array", () => {

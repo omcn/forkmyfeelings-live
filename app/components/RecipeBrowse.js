@@ -42,7 +42,12 @@ export default function RecipeBrowse({ onClose, onMakeIt }) {
   const filtered = useMemo(() => {
     return recipes.filter((r) => {
       const matchSearch = !search || r.name.toLowerCase().includes(search.toLowerCase()) || r.description?.toLowerCase().includes(search.toLowerCase());
-      const moods = Array.isArray(r.moods) ? r.moods : JSON.parse(r.moods || "[]");
+      let moods;
+      try {
+        moods = Array.isArray(r.moods) ? r.moods : JSON.parse(r.moods || "[]");
+      } catch {
+        moods = [];
+      }
       const matchMood = !filterMood || moods.includes(filterMood);
       return matchSearch && matchMood;
     });
