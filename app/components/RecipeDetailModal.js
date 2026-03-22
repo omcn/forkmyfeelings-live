@@ -9,17 +9,20 @@ export default function RecipeDetailModal({ recipeId, recipeSummary, onClose, on
   const [making, setMaking] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
+    let isMounted = true;
+    const fetchRecipe = async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("recipes")
         .select("*")
         .eq("id", recipeId)
         .single();
+      if (!isMounted) return;
       setRecipe(!error && data ? data : null);
       setLoading(false);
     };
-    fetch();
+    fetchRecipe();
+    return () => { isMounted = false; };
   }, [recipeId]);
 
   const ingredients = recipe

@@ -15,8 +15,10 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     if (!id) return;
+    let isMounted = true;
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
       const me = session?.user?.id;
       setCurrentUserId(me);
 
@@ -26,6 +28,7 @@ export default function UserProfilePage() {
         .select("id, username, avatar_url, bio")
         .eq("id", id)
         .single();
+      if (!isMounted) return;
       if (!prof) { router.push("/"); return; }
       setProfile(prof);
 
@@ -36,6 +39,7 @@ export default function UserProfilePage() {
         .eq("user_id", id)
         .order("created_at", { ascending: false })
         .limit(12);
+      if (!isMounted) return;
       setPosts(postData || []);
 
       // Check friendship status
@@ -45,16 +49,18 @@ export default function UserProfilePage() {
           .select("id, status, user_id, friend_id")
           .or(`and(user_id.eq.${me},friend_id.eq.${id}),and(user_id.eq.${id},friend_id.eq.${me})`)
           .maybeSingle();
+        if (!isMounted) return;
         if (friendship) {
           if (friendship.status === "accepted") setFriendStatus("accepted");
-          else if (friendship.user_id === me) setFriendStatus("sent"); // I sent the request
-          else setFriendStatus("pending"); // They sent, I can accept
+          else if (friendship.user_id === me) setFriendStatus("sent");
+          else setFriendStatus("pending");
         }
       }
 
       setLoading(false);
     };
     load();
+    return () => { isMounted = false; };
   }, [id]);
 
   const sendFriendRequest = async () => {
