@@ -79,7 +79,7 @@ export default function FriendList({ currentUser, onClose }) {
         <div className="space-y-3 mt-4">
           {friends.map((f) => (
             <div key={f.id} className="flex items-center gap-3 border border-pink-100 rounded-xl p-3 bg-rose-50">
-              <img src={f.avatar_url} className="w-10 h-10 rounded-full object-cover" alt="" />
+              <img src={f.avatar_url} className="w-10 h-10 rounded-full object-cover" alt={`${f.username}'s avatar`} />
               <span className="font-medium text-gray-800">@{f.username}</span>
             </div>
           ))}

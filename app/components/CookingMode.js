@@ -38,6 +38,15 @@ export default function CookingMode({
     console.error("Failed to parse steps", err);
   }
 
+  if (stepsArray.length === 0) {
+    return (
+      <div className="mt-6 bg-white p-6 rounded-2xl shadow-xl max-w-4xl w-full text-center">
+        <p className="text-gray-500">This recipe has no steps yet.</p>
+        <button onClick={onDone} className="mt-4 bg-pink-500 text-white px-6 py-2 rounded-full">Go Back</button>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-6 bg-white p-6 rounded-2xl shadow-xl max-w-4xl w-full">
       <div className="flex flex-col md:flex-row gap-6 items-center justify-between mb-6">
@@ -45,7 +54,7 @@ export default function CookingMode({
         <div className="flex-1 text-center md:text-left">
           <p className="text-sm text-gray-500">You're feeling...</p>
           <h2 className="text-2xl font-bold mt-1 capitalize">
-            {moodEmojis[selectedMoods[0]]} {selectedMoods[0]}
+            {moodEmojis[selectedMoods[0]] || "🍴"} {selectedMoods[0] || "hungry"}
           </h2>
           <p className="text-md mt-2 text-gray-600 italic">
             Let's cook something to match your vibe.
