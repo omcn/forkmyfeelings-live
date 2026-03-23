@@ -717,8 +717,23 @@ export default function Home() {
             haptic={haptic}
           />
 
-          {/* Two equal CTA buttons — Cook or Eat Out */}
-          <div className="mt-8 sm:mt-12 w-full flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
+          {/* Prompt text when no mood selected */}
+          <AnimatePresence>
+            {selectedMoods.length === 0 && (
+              <motion.p
+                key="pick-prompt"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mt-6 text-sm text-pink-400 font-medium"
+              >
+                Tap a mood to get started
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          {/* Side-by-side CTA buttons — Cook or Eat Out */}
+          <div className="mt-4 flex items-center justify-center gap-3 px-4">
             <motion.button
               aria-label={selectedMoods.length > 0 ? "Get recipe suggestion to cook at home" : "Select a mood first"}
               disabled={selectedMoods.length === 0 || feedMeLoading}
@@ -734,19 +749,19 @@ export default function Home() {
                 }
               }}
               animate={selectedMoods.length > 0 && !feedMeLoading
-                ? { scale: [1, 1.04, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } }
+                ? { scale: [1, 1.05, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } }
                 : { scale: 1 }
               }
-              className={`w-full sm:w-auto font-semibold py-5 px-10 sm:px-14 rounded-full shadow-xl transition ${
+              className={`font-semibold py-3.5 px-6 rounded-full shadow-lg transition text-sm ${
                 feedMeLoading
                   ? "bg-pink-400 text-white/80 cursor-wait"
                   : selectedMoods.length > 0
                     ? "bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white"
-                    : "bg-pink-200 text-pink-400 cursor-default"
+                    : "bg-gray-200 text-gray-400 cursor-default"
               }`}
-              whileTap={selectedMoods.length > 0 && !feedMeLoading ? { scale: 0.97 } : {}}
+              whileTap={selectedMoods.length > 0 && !feedMeLoading ? { scale: 0.95 } : {}}
             >
-              {feedMeLoading ? "Finding recipes..." : selectedMoods.length > 0 ? "Cook at Home 🍳" : "Pick a mood ↑"}
+              {feedMeLoading ? "Finding..." : "Cook at Home"}
             </motion.button>
 
             <motion.a
@@ -761,17 +776,17 @@ export default function Home() {
                 bloopSound.play();
               }}
               animate={selectedMoods.length > 0
-                ? { scale: [1, 1.04, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut", delay: 0.3 } }
+                ? { scale: [1, 1.05, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut", delay: 0.3 } }
                 : { scale: 1 }
               }
-              className={`w-full sm:w-auto text-center font-semibold py-5 px-10 sm:px-14 rounded-full shadow-xl transition inline-block ${
+              className={`font-semibold py-3.5 px-6 rounded-full shadow-lg transition text-sm text-center ${
                 selectedMoods.length > 0
                   ? "bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white cursor-pointer"
-                  : "bg-purple-200 text-purple-400 cursor-default pointer-events-none"
+                  : "bg-gray-200 text-gray-400 cursor-default pointer-events-none"
               }`}
-              whileTap={selectedMoods.length > 0 ? { scale: 0.97 } : {}}
+              whileTap={selectedMoods.length > 0 ? { scale: 0.95 } : {}}
             >
-              Eat Out 🍽️
+              Eat Out
             </motion.a>
           </div>
         </>
