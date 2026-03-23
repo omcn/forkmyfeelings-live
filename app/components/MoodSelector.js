@@ -55,9 +55,9 @@ export default function MoodSelector({
   haptic,
 }) {
   const containerSize = Math.min((windowWidth || 390) - 32, 460);
-  const btnWidth = isMobile ? Math.max(containerSize * 0.22, 70) : 120;
-  const btnHeight = isMobile ? 52 : 62;
-  const maxRadius = containerSize / 2 - btnWidth / 2 - 6;
+  const btnWidth = isMobile ? Math.max(containerSize * 0.26, 82) : 130;
+  const btnHeight = isMobile ? 60 : 68;
+  const maxRadius = containerSize / 2 - btnWidth / 2 - 4;
   const radius = Math.min(containerSize * 0.44, maxRadius);
 
   const currentMood = selectedMoods[0];
