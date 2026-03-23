@@ -12,6 +12,17 @@ const moodEmojis = {
   overwhelmed: "😵‍💫",
 };
 
+// Each mood gets its own color identity
+const moodColors = {
+  tired: { bg: "bg-indigo-50", border: "border-indigo-200", activeBg: "bg-indigo-200", activeBorder: "border-indigo-400", shadow: "shadow-indigo-100" },
+  happy: { bg: "bg-amber-50", border: "border-amber-200", activeBg: "bg-amber-200", activeBorder: "border-amber-400", shadow: "shadow-amber-100" },
+  sad: { bg: "bg-sky-50", border: "border-sky-200", activeBg: "bg-sky-200", activeBorder: "border-sky-400", shadow: "shadow-sky-100" },
+  rushed: { bg: "bg-red-50", border: "border-red-200", activeBg: "bg-red-200", activeBorder: "border-red-400", shadow: "shadow-red-100" },
+  "date-night": { bg: "bg-pink-50", border: "border-pink-200", activeBg: "bg-pink-200", activeBorder: "border-pink-400", shadow: "shadow-pink-100" },
+  chill: { bg: "bg-cyan-50", border: "border-cyan-200", activeBg: "bg-cyan-200", activeBorder: "border-cyan-400", shadow: "shadow-cyan-100" },
+  overwhelmed: { bg: "bg-orange-50", border: "border-orange-200", activeBg: "bg-orange-200", activeBorder: "border-orange-400", shadow: "shadow-orange-100" },
+};
+
 function MoodTooltip({ label, children }) {
   const [show, setShow] = useState(false);
 
@@ -96,12 +107,14 @@ export default function MoodSelector({
           const angle = (360 / total) * i - 90;
           const x = radius * Math.cos((angle * Math.PI) / 180);
           const y = radius * Math.sin((angle * Math.PI) / 180);
+          const isSelected = selectedMoods.includes(moodKey);
+          const colors = moodColors[moodKey] || moodColors.happy;
 
           return (
             <motion.button
               key={moodKey}
               role="radio"
-              aria-checked={selectedMoods.includes(moodKey)}
+              aria-checked={isSelected}
               aria-label={`${moodKey.replace("-", " ")} mood`}
               tabIndex={0}
               style={{
@@ -128,18 +141,21 @@ export default function MoodSelector({
                   e.currentTarget.click();
                 }
               }}
-              whileTap={{ scale: 0.95 }}
-              className={`shadow-md ${isMobile ? "px-1 py-1" : "px-4 py-2"} text-base rounded-full border transition focus:ring-2 focus:ring-pink-400 focus:outline-none ${
-                selectedMoods.includes(moodKey)
-                  ? "bg-pink-200 border-pink-400"
-                  : "bg-white border-gray-300 hover:bg-pink-100"
+              whileTap={{ scale: 0.9 }}
+              animate={isSelected ? { scale: 1.1 } : { scale: 1 }}
+              className={`border-2 transition-all duration-200 focus:ring-2 focus:ring-pink-400 focus:outline-none ${
+                isSelected
+                  ? `${colors.activeBg} ${colors.activeBorder} shadow-lg ${colors.shadow}`
+                  : `${colors.bg} ${colors.border} shadow-md hover:shadow-lg`
               }`}
             >
-              <div className="flex flex-col items-center justify-center">
-                <span style={{ fontSize: isMobile ? "1.2rem" : "1.5rem" }}>
+              <div className="flex flex-col items-center justify-center gap-0.5">
+                <span style={{ fontSize: isMobile ? "1.5rem" : "1.8rem", lineHeight: 1 }}>
                   {moodEmojis[moodKey] || "🍽️"}
                 </span>
-                <span className={`${isMobile ? "text-[10px]" : "text-sm"} font-medium capitalize truncate w-full text-center block`}>
+                <span className={`${isMobile ? "text-[9px]" : "text-xs"} font-semibold capitalize truncate w-full text-center block ${
+                  isSelected ? "text-gray-800" : "text-gray-500"
+                }`}>
                   {moodKey.replace("-", " ")}
                 </span>
               </div>
