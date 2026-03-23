@@ -16,6 +16,7 @@ import NotificationPrompt from "./components/NotificationPrompt";
 import RecipeBrowse from "./components/RecipeBrowse";
 import UsernamePrompt from "./components/UsernamePrompt";
 import toast from "react-hot-toast";
+import fallbackRecipes from "../data/recipes";
 
 // Extracted components
 import MoodSelector from "./components/MoodSelector";
@@ -309,15 +310,11 @@ export default function Home() {
 
     const initApp = async () => {
       try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!isMounted) return;
-      const currentUser = session?.user;
-      setUser(currentUser);
-
       const today = new Date().toISOString().slice(0, 10);
 
-      // Run independent queries in parallel
-      const [postsResult, recipesResult] = await Promise.all([
+      // Run auth + data queries in parallel — don't let auth block everything
+      const [sessionResult, postsResult, recipesResult] = await Promise.all([
+        supabase.auth.getSession(),
         supabase
           .from("recipe_posts")
           .select("*, profiles(username, avatar_url), recipes(name, emoji)")
@@ -330,10 +327,13 @@ export default function Home() {
       ]);
 
       if (!isMounted) return;
+      const currentUser = sessionResult.data?.session?.user;
+      setUser(currentUser);
+
       const postData = !postsResult.error ? (postsResult.data || []) : [];
       setPosts(postData);
 
-      if (!recipesResult.error) {
+      if (!recipesResult.error && recipesResult.data?.length > 0) {
         const formatted = {};
         recipesResult.data.forEach((recipe) => {
           const moods = typeof recipe.moods === "string"
@@ -345,6 +345,9 @@ export default function Home() {
           });
         });
         setRecipes(formatted);
+      } else {
+        // Use local fallback recipes if DB returned nothing
+        setRecipes(fallbackRecipes);
       }
 
       const lastMood = localStorage.getItem("lastMood");
@@ -451,6 +454,8 @@ export default function Home() {
       } catch (err) {
         console.error("App init error:", err);
         if (isMounted) {
+          // Use local fallback recipes so mood buttons still appear
+          setRecipes((prev) => Object.keys(prev).length === 0 ? fallbackRecipes : prev);
           setReadyToShowMoods(true);
           setAppLoading(false);
         }
@@ -459,13 +464,15 @@ export default function Home() {
 
     initApp();
 
-    // Safety net: if init hasn't finished in 10s, show the app anyway
+    // Safety net: if init hasn't finished in 5s, show the app anyway
     const safetyTimeout = setTimeout(() => {
       if (isMounted) {
+        // If recipes didn't load, use local fallbacks so mood buttons appear
+        setRecipes((prev) => Object.keys(prev).length === 0 ? fallbackRecipes : prev);
         setReadyToShowMoods(true);
         setAppLoading(false);
       }
-    }, 10000);
+    }, 5000);
 
     listener = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
