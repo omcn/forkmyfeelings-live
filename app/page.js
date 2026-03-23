@@ -305,9 +305,11 @@ export default function Home() {
   // App initialization
   useEffect(() => {
     let listener;
+    let isMounted = true;
 
     const initApp = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
       const currentUser = session?.user;
       setUser(currentUser);
 
@@ -326,6 +328,7 @@ export default function Home() {
           .eq("status", "approved"),
       ]);
 
+      if (!isMounted) return;
       const postData = !postsResult.error ? (postsResult.data || []) : [];
       setPosts(postData);
 
@@ -378,6 +381,7 @@ export default function Home() {
         ];
 
         const [profResult, friendResult, savedResult, notifResult, rxResult, myRxResult] = await Promise.all(userQueries);
+        if (!isMounted) return;
 
         // Username check
         if (!localStorage.getItem("fmf_username_set")) {
@@ -438,19 +442,25 @@ export default function Home() {
       } catch {}
 
       setTimeout(() => {
-        setReadyToShowMoods(true);
-        setAppLoading(false);
+        if (isMounted) {
+          setReadyToShowMoods(true);
+          setAppLoading(false);
+        }
       }, 300);
     };
 
     initApp();
 
     listener = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
       if (event === "SIGNED_IN") setUser(session.user);
       if (event === "SIGNED_OUT") setUser(null);
     });
 
-    return () => { listener?.subscription?.unsubscribe(); };
+    return () => {
+      isMounted = false;
+      listener?.subscription?.unsubscribe();
+    };
   }, []);
 
   const handleMultiMoodSubmit = async () => {

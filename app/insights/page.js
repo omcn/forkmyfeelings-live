@@ -12,15 +12,17 @@ export default function InsightsPage() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
       if (!session?.user) { router.push("/"); return; }
       setUser(session.user);
 
       // Cook history from localStorage
       try {
         const raw = localStorage.getItem("fmf_cook_history");
-        setCookHistory(raw ? JSON.parse(raw) : []);
+        if (isMounted) setCookHistory(raw ? JSON.parse(raw) : []);
       } catch {}
 
       // Rating history from Supabase
@@ -31,6 +33,7 @@ export default function InsightsPage() {
         .order("created_at", { ascending: false })
         .limit(50);
 
+      if (!isMounted) return;
       if (ratings) {
         setRatingHistory(ratings);
         // Top rated (≥4 stars, unique recipes)
@@ -44,6 +47,7 @@ export default function InsightsPage() {
       setLoading(false);
     };
     load();
+    return () => { isMounted = false; };
   }, []);
 
   // Cook streak calculation

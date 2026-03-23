@@ -6,16 +6,18 @@ export default function FriendRequests({ currentUser }) {
   const [requests, setRequests] = useState([]);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchRequests = async () => {
       const { data, error } = await supabase
         .from("friends")
         .select("id, user_id, profile:fk_user_id(username, avatar_url)")
         .eq("friend_id", currentUser.id)
         .eq("status", "pending");
-      if (!error) setRequests(data);
-      else console.error("Error fetching requests:", error.message);
+      if (isMounted && !error) setRequests(data);
+      else if (error) console.error("Error fetching requests:", error.message);
     };
     fetchRequests();
+    return () => { isMounted = false; };
   }, [currentUser]);
 
   const handleAction = async (id, accept) => {

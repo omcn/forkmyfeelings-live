@@ -12,12 +12,14 @@ export default function LeaderboardPage() {
   const router = useRouter();
 
   useEffect(() => {
+    let isMounted = true;
     const load = async () => {
       // Top-rated recipes: average rating per recipe, min 2 ratings
       const { data: ratingData } = await supabase
         .from("recipe_ratings")
         .select("recipe_id, rating");
 
+      if (!isMounted) return;
       if (ratingData) {
         const grouped = {};
         ratingData.forEach(({ recipe_id, rating }) => {
@@ -42,6 +44,7 @@ export default function LeaderboardPage() {
             .select("id, name, emoji, description")
             .in("id", ids);
 
+          if (!isMounted) return;
           if (recipes) {
             const enriched = averages.map((a) => ({
               ...a,
@@ -59,6 +62,7 @@ export default function LeaderboardPage() {
         .select("user_id, profiles(username, avatar_url)")
         .gte("created_at", weekAgo);
 
+      if (!isMounted) return;
       if (posts) {
         const chefMap = {};
         posts.forEach(({ user_id, profiles: profile }) => {
@@ -80,15 +84,16 @@ export default function LeaderboardPage() {
     // Real-time refresh when new ratings or posts come in
     const ratingsSub = supabase
       .channel("leaderboard-ratings")
-      .on("postgres_changes", { event: "*", schema: "public", table: "recipe_ratings" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "recipe_ratings" }, () => { if (isMounted) load(); })
       .subscribe();
 
     const postsSub = supabase
       .channel("leaderboard-posts")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "recipe_posts" }, () => load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "recipe_posts" }, () => { if (isMounted) load(); })
       .subscribe();
 
     return () => {
+      isMounted = false;
       supabase.removeChannel(ratingsSub);
       supabase.removeChannel(postsSub);
     };

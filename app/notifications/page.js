@@ -17,8 +17,10 @@ export default function NotificationsPage() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
       if (!session?.user) { router.push("/"); return; }
       setUser(session.user);
 
@@ -29,6 +31,7 @@ export default function NotificationsPage() {
         .order("created_at", { ascending: false })
         .limit(50);
 
+      if (!isMounted) return;
       setNotifications(data || []);
 
       // Mark all as read
@@ -38,9 +41,10 @@ export default function NotificationsPage() {
         .eq("user_id", session.user.id)
         .eq("read", false);
 
-      setLoading(false);
+      if (isMounted) setLoading(false);
     };
     load();
+    return () => { isMounted = false; };
   }, []);
 
   const handleAcceptFriend = async (notif) => {
