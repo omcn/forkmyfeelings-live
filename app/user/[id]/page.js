@@ -17,6 +17,7 @@ export default function UserProfilePage() {
     if (!id) return;
     let isMounted = true;
     const load = async () => {
+      try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!isMounted) return;
       const me = session?.user?.id;
@@ -58,6 +59,10 @@ export default function UserProfilePage() {
       }
 
       setLoading(false);
+      } catch (err) {
+        console.error("User profile load error:", err);
+        if (isMounted) setLoading(false);
+      }
     };
     load();
     return () => { isMounted = false; };

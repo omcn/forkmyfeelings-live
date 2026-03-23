@@ -308,6 +308,7 @@ export default function Home() {
     let isMounted = true;
 
     const initApp = async () => {
+      try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!isMounted) return;
       const currentUser = session?.user;
@@ -447,6 +448,13 @@ export default function Home() {
           setAppLoading(false);
         }
       }, 300);
+      } catch (err) {
+        console.error("App init error:", err);
+        if (isMounted) {
+          setReadyToShowMoods(true);
+          setAppLoading(false);
+        }
+      }
     };
 
     initApp();
@@ -497,8 +505,11 @@ export default function Home() {
 
     setNoRecipesFound(false);
 
-    const cookHistoryRaw = localStorage.getItem("fmf_cook_history");
-    const cookHistory = cookHistoryRaw ? JSON.parse(cookHistoryRaw) : [];
+    let cookHistory = [];
+    try {
+      const cookHistoryRaw = localStorage.getItem("fmf_cook_history");
+      cookHistory = cookHistoryRaw ? JSON.parse(cookHistoryRaw) : [];
+    } catch {}
 
     const [suggestion] = getMealSuggestions({
       userRatings,

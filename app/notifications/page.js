@@ -19,6 +19,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
+      try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!isMounted) return;
       if (!session?.user) { router.push("/"); return; }
@@ -42,6 +43,10 @@ export default function NotificationsPage() {
         .eq("read", false);
 
       if (isMounted) setLoading(false);
+      } catch (err) {
+        console.error("Notifications load error:", err);
+        if (isMounted) setLoading(false);
+      }
     };
     load();
     return () => { isMounted = false; };

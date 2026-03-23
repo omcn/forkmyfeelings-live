@@ -14,6 +14,7 @@ export default function LeaderboardPage() {
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
+      try {
       // Top-rated recipes: average rating per recipe, min 2 ratings
       const { data: ratingData } = await supabase
         .from("recipe_ratings")
@@ -78,6 +79,10 @@ export default function LeaderboardPage() {
       }
 
       setLoading(false);
+      } catch (err) {
+        console.error("Leaderboard load error:", err);
+        if (isMounted) setLoading(false);
+      }
     };
     load();
 
