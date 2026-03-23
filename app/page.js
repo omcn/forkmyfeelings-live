@@ -41,16 +41,14 @@ function safeParseArray(key) {
 }
 
 export default function Home() {
-  const [appLoading, setAppLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedMoods, setSelectedMoods] = useState([]);
-  const [recipes, setRecipes] = useState({});
+  const [recipes, setRecipes] = useState(fallbackRecipes);
   const [recipe, setRecipe] = useState(null);
   const [cookingMode, setCookingMode] = useState(false);
   const [showSuggestionMessage, setShowSuggestionMessage] = useState(false);
   const [showRecipeCard, setShowRecipeCard] = useState(false);
   const [user, setUser] = useState(null);
-  const [readyToShowMoods, setReadyToShowMoods] = useState(false);
   const { width: windowWidth } = useWindowSize();
   const isMobile = (windowWidth || 0) < 768;
   const [showShoppingList, setShowShoppingList] = useState(false);
@@ -445,34 +443,12 @@ export default function Home() {
         }
       } catch {}
 
-      setTimeout(() => {
-        if (isMounted) {
-          setReadyToShowMoods(true);
-          setAppLoading(false);
-        }
-      }, 300);
       } catch (err) {
         console.error("App init error:", err);
-        if (isMounted) {
-          // Use local fallback recipes so mood buttons still appear
-          setRecipes((prev) => Object.keys(prev).length === 0 ? fallbackRecipes : prev);
-          setReadyToShowMoods(true);
-          setAppLoading(false);
-        }
       }
     };
 
     initApp();
-
-    // Safety net: if init hasn't finished in 5s, show the app anyway
-    const safetyTimeout = setTimeout(() => {
-      if (isMounted) {
-        // If recipes didn't load, use local fallbacks so mood buttons appear
-        setRecipes((prev) => Object.keys(prev).length === 0 ? fallbackRecipes : prev);
-        setReadyToShowMoods(true);
-        setAppLoading(false);
-      }
-    }, 5000);
 
     listener = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
@@ -482,7 +458,6 @@ export default function Home() {
 
     return () => {
       isMounted = false;
-      clearTimeout(safetyTimeout);
       listener?.subscription?.unsubscribe();
     };
   }, []);
@@ -594,32 +569,6 @@ export default function Home() {
     setShowAuthModal(true);
     return false;
   };
-
-  // Loading skeleton
-  if (appLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12">
-        <div className="w-48 h-8 bg-pink-200 rounded-full animate-pulse mb-4" />
-        <div className="w-64 h-4 bg-pink-100 rounded-full animate-pulse mb-12" />
-        <div className="relative w-72 h-72 flex items-center justify-center">
-          <div className="w-36 h-36 rounded-full bg-pink-200 animate-pulse" />
-          {[...Array(6)].map((_, i) => {
-            const angle = (360 / 6) * i;
-            const x = 120 * Math.cos((angle * Math.PI) / 180);
-            const y = 120 * Math.sin((angle * Math.PI) / 180);
-            return (
-              <div
-                key={i}
-                className="absolute w-20 h-10 bg-white rounded-full animate-pulse opacity-60"
-                style={{ left: `calc(50% + ${x}px - 40px)`, top: `calc(50% + ${y}px - 20px)` }}
-              />
-            );
-          })}
-        </div>
-        <div className="mt-12 w-36 h-14 bg-pink-300 rounded-full animate-pulse" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-100 to-orange-100 flex flex-col items-center justify-center px-4 py-12 text-center font-sans overflow-x-hidden">
@@ -743,7 +692,7 @@ export default function Home() {
         Tell us how you feel. We'll feed your vibe.
       </motion.p>
 
-      {readyToShowMoods && !cookingMode && !showSuggestionMessage && !showRecipeCard && (
+      {!cookingMode && !showSuggestionMessage && !showRecipeCard && (
         <>
           <MoodSelector
             recipes={recipes}
