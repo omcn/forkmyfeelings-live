@@ -331,6 +331,10 @@ export default function Home() {
       const postData = !postsResult.error ? (postsResult.data || []) : [];
       setPosts(postData);
 
+      // Only show these 7 moods — remap legacy DB tags to their parents
+      const VALID_MOODS = new Set(["tired", "happy", "sad", "rushed", "date-night", "chill", "overwhelmed"]);
+      const MOOD_REMAP = { recovering: "tired", bored: "chill", nostalgic: "sad" };
+
       if (!recipesResult.error && recipesResult.data?.length > 0) {
         const formatted = {};
         recipesResult.data.forEach((recipe) => {
@@ -338,8 +342,10 @@ export default function Home() {
             ? JSON.parse(recipe.moods)
             : recipe.moods;
           moods.forEach((mood) => {
-            if (!formatted[mood]) formatted[mood] = [];
-            formatted[mood].push(recipe);
+            const mapped = MOOD_REMAP[mood] || mood;
+            if (!VALID_MOODS.has(mapped)) return;
+            if (!formatted[mapped]) formatted[mapped] = [];
+            formatted[mapped].push(recipe);
           });
         });
         setRecipes(formatted);
