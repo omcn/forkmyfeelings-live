@@ -67,14 +67,29 @@ export default function EatOutPage() {
       setLocationError("Location not supported by your browser.");
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (err) => {
-        console.error("Geolocation error:", err);
-        setLocationError("Enable location access to find places near you.");
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+
+    // Try high accuracy first (GPS), fall back to low accuracy (IP/WiFi)
+    const getLocation = (highAccuracy, timeoutMs) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => {
+          console.error("Geolocation error:", err.code, err.message);
+          if (highAccuracy) {
+            // Retry with low accuracy (works better in simulators & desktop)
+            getLocation(false, 15000);
+          } else {
+            setLocationError(
+              err.code === 1
+                ? "Location access denied. Enable it in Settings to find places near you."
+                : "Couldn't get your location. You can still browse categories and open Maps manually."
+            );
+          }
+        },
+        { enableHighAccuracy: highAccuracy, timeout: timeoutMs, maximumAge: 300000 }
+      );
+    };
+
+    getLocation(true, 8000);
   }, []);
 
   // Check if user came with a mood from the home page
@@ -90,14 +105,16 @@ export default function EatOutPage() {
   const currentFilter = moodFilters.find((f) => f.key === activeFilter) || moodFilters[0];
 
   const openInMaps = (searchTerm) => {
-    if (!location) {
-      toast.error("Waiting for your location...");
-      return;
+    let url;
+    if (location) {
+      // Append "near me" to force local results — without this, Apple Maps
+      // treats descriptive terms like "cozy restaurant" as place names and
+      // jumps to named businesses in other countries
+      url = `https://maps.apple.com/?q=${encodeURIComponent(searchTerm + " near me")}&sll=${location.lat},${location.lng}&spn=0.05,0.05&z=14`;
+    } else {
+      // No location — still open Maps and let it use its own location
+      url = `https://maps.apple.com/?q=${encodeURIComponent(searchTerm + " near me")}`;
     }
-    // Append "near me" to force local results — without this, Apple Maps
-    // treats descriptive terms like "cozy restaurant" as place names and
-    // jumps to named businesses in other countries
-    const url = `https://maps.apple.com/?q=${encodeURIComponent(searchTerm + " near me")}&sll=${location.lat},${location.lng}&spn=0.05,0.05&z=14`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -272,11 +289,10 @@ export default function EatOutPage() {
 
                 <button
                   onClick={() => openInMaps(currentFilter.search)}
-                  disabled={!location}
-                  className="w-full bg-pink-500 hover:bg-pink-600 active:bg-pink-700 disabled:bg-pink-200 text-white font-semibold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-sm mb-3"
+                  className="w-full bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white font-semibold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-sm mb-3"
                 >
                   <span className="text-lg">🗺️</span>
-                  {location ? "Open in Apple Maps" : "Waiting for location..."}
+                  Open in Apple Maps
                 </button>
 
                 <div className="flex gap-2">
@@ -288,7 +304,6 @@ export default function EatOutPage() {
                   </button>
                   <button
                     onClick={() => {
-                      if (!location) return;
                       const text = `Let's go to a ${currentFilter.search}! 🍽️\n\nFound on Fork My Feels`;
                       if (navigator.share) {
                         navigator.share({ title: `${currentFilter.label} near me`, text, url: "https://forkmyfeelings.com/eat-out" });
