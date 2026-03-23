@@ -459,6 +459,14 @@ export default function Home() {
 
     initApp();
 
+    // Safety net: if init hasn't finished in 10s, show the app anyway
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted) {
+        setReadyToShowMoods(true);
+        setAppLoading(false);
+      }
+    }, 10000);
+
     listener = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
       if (event === "SIGNED_IN") setUser(session.user);
@@ -467,6 +475,7 @@ export default function Home() {
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeout);
       listener?.subscription?.unsubscribe();
     };
   }, []);
