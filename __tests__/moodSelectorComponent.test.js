@@ -3,12 +3,11 @@
 describe("MoodSelector mood emoji mapping", () => {
   const moodEmojis = {
     tired: "😴", happy: "😊", sad: "😢", rushed: "⏰",
-    "date-night": "💘", chill: "🧊", recovering: "🛌",
-    bored: "😐", nostalgic: "🕰️", overwhelmed: "😵‍💫",
+    "date-night": "💘", chill: "🧊", overwhelmed: "😵‍💫",
   };
 
-  test("all 10 moods have emojis", () => {
-    expect(Object.keys(moodEmojis)).toHaveLength(10);
+  test("all 7 moods have emojis", () => {
+    expect(Object.keys(moodEmojis)).toHaveLength(7);
   });
 
   test("each mood has a non-empty emoji", () => {
@@ -31,14 +30,11 @@ describe("MoodSelector rascal videos", () => {
     rushed: "/videos/rascal-rushed.mp4",
     happy: "/videos/rascal-happy1.mp4",
     overwhelmed: "/videos/rascal-overwhelmed.mp4",
-    nostalgic: "/videos/rascal-nostalgic.mp4",
     "date-night": "/videos/rascal-date-night.mp4",
-    recovering: "/videos/rascal-recovering.mp4",
-    bored: "/videos/rascal-bored.mp4",
   };
 
   test("each mood has a video", () => {
-    expect(Object.keys(rascalVideos)).toHaveLength(10);
+    expect(Object.keys(rascalVideos)).toHaveLength(7);
   });
 
   test("no mood selected falls back to idle", () => {

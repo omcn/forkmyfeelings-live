@@ -9,19 +9,19 @@ describe("EatOutSuggestion mood keyword mapping", () => {
     excited: "dessert", energetic: "dessert",
     calm: "tea room", peaceful: "tea room",
     romantic: "romantic restaurant", flirty: "romantic restaurant",
-    bored: "fast food", curious: "fusion restaurant",
-    adventurous: "international restaurant", nostalgic: "diner",
+    curious: "fusion restaurant",
+    adventurous: "international restaurant",
     angry: "spicy food", hangry: "quick bites",
     focused: "healthy restaurant", productive: "healthy restaurant",
     social: "bar", celebrating: "steakhouse",
     lonely: "diner", lazy: "brunch",
     "date-night": "romantic restaurant", chill: "café",
-    overwhelmed: "comfort food", recovering: "soup restaurant",
+    overwhelmed: "comfort food",
     rushed: "fast food",
   };
 
-  test("maps all 10 main moods", () => {
-    const mainMoods = ["tired", "happy", "sad", "rushed", "date-night", "chill", "recovering", "bored", "nostalgic", "overwhelmed"];
+  test("maps all 7 main moods", () => {
+    const mainMoods = ["tired", "happy", "sad", "rushed", "date-night", "chill", "overwhelmed"];
     mainMoods.forEach((mood) => {
       expect(moodKeywords[mood]).toBeDefined();
     });

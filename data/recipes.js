@@ -1,5 +1,6 @@
-// Recipes keyed by mood. Each mood has 5 unique, quality recipes.
+// Recipes keyed by mood. Each mood has 7–10 recipes.
 // These serve as local fallbacks; the live DB is the primary source.
+// 7 moods: tired, happy, sad, rushed, date-night, chill, overwhelmed
 
 const recipes = {
 
@@ -73,6 +74,76 @@ const recipes = {
         "Slice banana and lay on top.",
         "Drizzle with honey and a pinch of cinnamon.",
         "Eat immediately, preferably horizontal on the sofa.",
+      ],
+    },
+    {
+      id: "tired-6",
+      name: "Electrolyte Smoothie",
+      emoji: "🥤",
+      description: "Banana, coconut water and honey. Nature's recovery drink.",
+      ingredients: ["2 bananas", "300ml coconut water", "1 tbsp honey", "Handful of spinach", "1 tbsp peanut butter", "Pinch of salt"],
+      steps: [
+        "Peel bananas (can be frozen for a thicker smoothie).",
+        "Add all ingredients to a blender.",
+        "Blend until smooth.",
+        "Taste and add more honey if needed.",
+        "Drink slowly.",
+      ],
+    },
+    {
+      id: "tired-7",
+      name: "Congee (Rice Porridge)",
+      emoji: "🍚",
+      description: "Gentle, soft, and easy on everything. East Asia's cure-all.",
+      ingredients: ["150g jasmine rice", "1 litre chicken or veg stock", "2 garlic cloves", "Fresh ginger", "Soy sauce", "Spring onions", "Soft-boiled egg (optional)"],
+      steps: [
+        "Rinse rice and add to a large pot with stock.",
+        "Add sliced ginger and garlic.",
+        "Simmer on low heat 40–50 minutes, stirring occasionally until porridge-thick.",
+        "Season with soy sauce.",
+        "Serve with soft-boiled egg and spring onions on top.",
+      ],
+    },
+    {
+      id: "tired-8",
+      name: "Banana & Oat Pancakes",
+      emoji: "🥞",
+      description: "Two ingredients, naturally sweet, gentle on the stomach.",
+      ingredients: ["2 ripe bananas", "2 eggs", "Pinch of cinnamon", "Coconut oil for frying", "Honey to serve"],
+      steps: [
+        "Mash bananas thoroughly in a bowl.",
+        "Whisk in the eggs and cinnamon.",
+        "Heat a little coconut oil in a non-stick pan over medium-low.",
+        "Pour small circles and cook 2–3 min until bubbles form, flip gently.",
+        "Serve with a drizzle of honey.",
+      ],
+    },
+    {
+      id: "tired-9",
+      name: "Toast & Poached Egg",
+      emoji: "🍳",
+      description: "The gentlest, most perfect thing. Protein and carbs.",
+      ingredients: ["2 eggs", "2 slices sourdough", "1 tbsp white wine vinegar", "Salt", "Black pepper", "Butter"],
+      steps: [
+        "Bring a pan of water to a gentle simmer, add vinegar.",
+        "Toast and butter the bread.",
+        "Crack each egg into a cup first.",
+        "Create a gentle swirl in the water, lower the cup and release the egg.",
+        "Cook 3–4 minutes, lift out with a slotted spoon, season, serve on toast.",
+      ],
+    },
+    {
+      id: "tired-10",
+      name: "Ginger & Honey Tea",
+      emoji: "🍵",
+      description: "Not a recipe, just the right thing to drink.",
+      ingredients: ["500ml water", "Thumb of fresh ginger", "1 lemon", "2 tbsp honey", "Pinch of turmeric (optional)"],
+      steps: [
+        "Peel and slice ginger into coins.",
+        "Bring water to the boil, add ginger.",
+        "Simmer 10 minutes.",
+        "Pour into a mug through a sieve.",
+        "Add lemon juice, honey, and turmeric. Sip slowly.",
       ],
     },
   ],
@@ -221,6 +292,76 @@ const recipes = {
         "Add peanut butter and honey, blend again.",
         "Eat immediately as soft-serve or freeze 30 mins for a firmer texture.",
         "Top with a little cinnamon.",
+      ],
+    },
+    {
+      id: "sad-6",
+      name: "Shepherd's Pie",
+      emoji: "🥧",
+      description: "The dish your childhood tasted like. Proper and comforting.",
+      ingredients: ["500g lamb mince", "1 onion", "2 carrots", "2 tbsp tomato purée", "1 tbsp Worcestershire sauce", "300ml lamb stock", "800g potatoes", "50g butter", "Splash of milk"],
+      steps: [
+        "Brown lamb mince in a large pan. Drain excess fat.",
+        "Add diced onion, carrot, tomato purée and Worcestershire sauce.",
+        "Pour in stock, simmer 20 minutes until thickened.",
+        "Boil and mash potatoes with butter and milk.",
+        "Spread mince in an oven dish, top with mash, fork ridges on top, bake 25 min at 190°C.",
+      ],
+    },
+    {
+      id: "sad-7",
+      name: "Beans on Toast",
+      emoji: "🫘",
+      description: "Don't overthink it. Sometimes the classics are classics for a reason.",
+      ingredients: ["1 tin baked beans", "2 thick slices white bread", "Butter", "Grated cheddar (optional)", "A dash of Worcestershire sauce"],
+      steps: [
+        "Heat beans in a saucepan over medium heat, stirring.",
+        "Add a dash of Worcestershire sauce.",
+        "Toast the bread to golden.",
+        "Butter generously.",
+        "Pour beans over toast, top with cheese if you like.",
+      ],
+    },
+    {
+      id: "sad-8",
+      name: "Chicken & Sweetcorn Soup",
+      emoji: "🍜",
+      description: "Sweet, thick, and deeply comforting. A take-away memory.",
+      ingredients: ["1 chicken breast (poached and shredded)", "1 tin sweetcorn", "1 litre chicken stock", "1 tbsp soy sauce", "1 tbsp cornflour + 2 tbsp water", "2 eggs (beaten)", "Spring onions", "Sesame oil"],
+      steps: [
+        "Bring stock to a simmer, add sweetcorn and soy sauce.",
+        "Mix cornflour with water, stir into the soup to thicken.",
+        "Add shredded chicken.",
+        "Slowly pour in beaten eggs while stirring in circles — they'll form ribbons.",
+        "Season, drizzle sesame oil, top with spring onions.",
+      ],
+    },
+    {
+      id: "sad-9",
+      name: "Rice Pudding",
+      emoji: "🍚",
+      description: "Sweet, slow, creamy. The pudding that feels like a memory.",
+      ingredients: ["80g pudding rice", "600ml whole milk", "200ml double cream", "50g sugar", "1 tsp vanilla extract", "Pinch of nutmeg"],
+      steps: [
+        "Combine everything in an ovenproof dish.",
+        "Stir well and grate over nutmeg.",
+        "Bake at 150°C for 2 hours, stirring after the first 30 minutes.",
+        "The top should be golden and the pudding thick and creamy.",
+        "Serve warm with a spoon of jam if you like.",
+      ],
+    },
+    {
+      id: "sad-10",
+      name: "Victoria Sponge",
+      emoji: "🎂",
+      description: "The quintessential cake. Every slice is a special occasion.",
+      ingredients: ["200g butter", "200g caster sugar", "4 eggs", "200g self-raising flour", "1 tsp baking powder", "Jam", "200ml double cream", "Icing sugar"],
+      steps: [
+        "Preheat oven to 180°C. Grease two 20cm sandwich tins.",
+        "Beat butter and sugar until pale. Add eggs one at a time.",
+        "Fold in flour and baking powder.",
+        "Divide between tins, bake 20–25 minutes until springy.",
+        "Cool completely. Spread one sponge with jam and cream, top with the other and dust with icing sugar.",
       ],
     },
   ],
@@ -445,86 +586,8 @@ const recipes = {
         "Pour into a mug through a sieve. Sprinkle a little cinnamon on top.",
       ],
     },
-  ],
-
-  // ─── RECOVERING ─────────────────────────────────────────────────────────────
-  recovering: [
     {
-      id: "recovering-1",
-      name: "Electrolyte Smoothie",
-      emoji: "🥤",
-      description: "Banana, coconut water and honey. Nature's recovery drink.",
-      ingredients: ["2 bananas", "300ml coconut water", "1 tbsp honey", "Handful of spinach", "1 tbsp peanut butter", "Pinch of salt"],
-      steps: [
-        "Peel bananas (can be frozen for a thicker smoothie).",
-        "Add all ingredients to a blender.",
-        "Blend until smooth.",
-        "Taste and add more honey if needed.",
-        "Drink slowly.",
-      ],
-    },
-    {
-      id: "recovering-2",
-      name: "Congee (Rice Porridge)",
-      emoji: "🍚",
-      description: "Gentle, soft, and easy on everything. East Asia's cure-all.",
-      ingredients: ["150g jasmine rice", "1 litre chicken or veg stock", "2 garlic cloves", "Fresh ginger", "Soy sauce", "Spring onions", "Soft-boiled egg (optional)"],
-      steps: [
-        "Rinse rice and add to a large pot with stock.",
-        "Add sliced ginger and garlic.",
-        "Simmer on low heat 40–50 minutes, stirring occasionally until porridge-thick.",
-        "Season with soy sauce.",
-        "Serve with soft-boiled egg and spring onions on top.",
-      ],
-    },
-    {
-      id: "recovering-3",
-      name: "Banana & Oat Pancakes",
-      emoji: "🥞",
-      description: "Two ingredients, naturally sweet, gentle on the stomach.",
-      ingredients: ["2 ripe bananas", "2 eggs", "Pinch of cinnamon", "Coconut oil for frying", "Honey to serve"],
-      steps: [
-        "Mash bananas thoroughly in a bowl.",
-        "Whisk in the eggs and cinnamon.",
-        "Heat a little coconut oil in a non-stick pan over medium-low.",
-        "Pour small circles and cook 2–3 min until bubbles form, flip gently.",
-        "Serve with a drizzle of honey.",
-      ],
-    },
-    {
-      id: "recovering-4",
-      name: "Toast & Poached Egg",
-      emoji: "🍳",
-      description: "The gentlest, most perfect thing. Protein and carbs.",
-      ingredients: ["2 eggs", "2 slices sourdough", "1 tbsp white wine vinegar", "Salt", "Black pepper", "Butter"],
-      steps: [
-        "Bring a pan of water to a gentle simmer, add vinegar.",
-        "Toast and butter the bread.",
-        "Crack each egg into a cup first.",
-        "Create a gentle swirl in the water, lower the cup and release the egg.",
-        "Cook 3–4 minutes, lift out with a slotted spoon, season, serve on toast.",
-      ],
-    },
-    {
-      id: "recovering-5",
-      name: "Ginger & Honey Tea",
-      emoji: "🍵",
-      description: "Not a recipe, just the right thing to drink.",
-      ingredients: ["500ml water", "Thumb of fresh ginger", "1 lemon", "2 tbsp honey", "Pinch of turmeric (optional)"],
-      steps: [
-        "Peel and slice ginger into coins.",
-        "Bring water to the boil, add ginger.",
-        "Simmer 10 minutes.",
-        "Pour into a mug through a sieve.",
-        "Add lemon juice, honey, and turmeric. Sip slowly.",
-      ],
-    },
-  ],
-
-  // ─── BORED ──────────────────────────────────────────────────────────────────
-  bored: [
-    {
-      id: "bored-1",
+      id: "chill-6",
       name: "Homemade Bread",
       emoji: "🍞",
       description: "Satisfying to make, incredible to smell, even better to eat.",
@@ -538,7 +601,7 @@ const recipes = {
       ],
     },
     {
-      id: "bored-2",
+      id: "chill-7",
       name: "Homemade Cinnamon Rolls",
       emoji: "🌀",
       description: "A whole afternoon project with the most rewarding ending.",
@@ -552,7 +615,7 @@ const recipes = {
       ],
     },
     {
-      id: "bored-3",
+      id: "chill-8",
       name: "Sushi Rolls",
       emoji: "🍱",
       description: "Genuinely fun to make — once you start you won't stop.",
@@ -566,7 +629,7 @@ const recipes = {
       ],
     },
     {
-      id: "bored-4",
+      id: "chill-9",
       name: "Cheese Scones",
       emoji: "🧀",
       description: "20 minutes, incredibly easy, and your kitchen will smell incredible.",
@@ -580,7 +643,7 @@ const recipes = {
       ],
     },
     {
-      id: "bored-5",
+      id: "chill-10",
       name: "Chocolate Chip Cookies",
       emoji: "🍪",
       description: "The science of the perfect cookie. A worthy project.",
@@ -594,81 +657,6 @@ const recipes = {
       ],
     },
   ],
-
-  // ─── NOSTALGIC ──────────────────────────────────────────────────────────────
-  nostalgic: [
-    {
-      id: "nostalgic-1",
-      name: "Shepherd's Pie",
-      emoji: "🥧",
-      description: "The dish your childhood tasted like. Proper and comforting.",
-      ingredients: ["500g lamb mince", "1 onion", "2 carrots", "2 tbsp tomato purée", "1 tbsp Worcestershire sauce", "300ml lamb stock", "800g potatoes", "50g butter", "Splash of milk"],
-      steps: [
-        "Brown lamb mince in a large pan. Drain excess fat.",
-        "Add diced onion, carrot, tomato purée and Worcestershire sauce.",
-        "Pour in stock, simmer 20 minutes until thickened.",
-        "Boil and mash potatoes with butter and milk.",
-        "Spread mince in an oven dish, top with mash, fork ridges on top, bake 25 min at 190°C.",
-      ],
-    },
-    {
-      id: "nostalgic-2",
-      name: "Beans on Toast",
-      emoji: "🫘",
-      description: "Don't overthink it. Sometimes the classics are classics for a reason.",
-      ingredients: ["1 tin baked beans", "2 thick slices white bread", "Butter", "Grated cheddar (optional)", "A dash of Worcestershire sauce"],
-      steps: [
-        "Heat beans in a saucepan over medium heat, stirring.",
-        "Add a dash of Worcestershire sauce.",
-        "Toast the bread to golden.",
-        "Butter generously.",
-        "Pour beans over toast, top with cheese if you like.",
-      ],
-    },
-    {
-      id: "nostalgic-3",
-      name: "Chicken & Sweetcorn Soup",
-      emoji: "🍜",
-      description: "Sweet, thick, and deeply comforting. A take-away memory.",
-      ingredients: ["1 chicken breast (poached and shredded)", "1 tin sweetcorn", "1 litre chicken stock", "1 tbsp soy sauce", "1 tbsp cornflour + 2 tbsp water", "2 eggs (beaten)", "Spring onions", "Sesame oil"],
-      steps: [
-        "Bring stock to a simmer, add sweetcorn and soy sauce.",
-        "Mix cornflour with water, stir into the soup to thicken.",
-        "Add shredded chicken.",
-        "Slowly pour in beaten eggs while stirring in circles — they'll form ribbons.",
-        "Season, drizzle sesame oil, top with spring onions.",
-      ],
-    },
-    {
-      id: "nostalgic-4",
-      name: "Rice Pudding",
-      emoji: "🍚",
-      description: "Sweet, slow, creamy. The pudding that feels like a memory.",
-      ingredients: ["80g pudding rice", "600ml whole milk", "200ml double cream", "50g sugar", "1 tsp vanilla extract", "Pinch of nutmeg"],
-      steps: [
-        "Combine everything in an ovenproof dish.",
-        "Stir well and grate over nutmeg.",
-        "Bake at 150°C for 2 hours, stirring after the first 30 minutes.",
-        "The top should be golden and the pudding thick and creamy.",
-        "Serve warm with a spoon of jam if you like.",
-      ],
-    },
-    {
-      id: "nostalgic-5",
-      name: "Victoria Sponge",
-      emoji: "🎂",
-      description: "The quintessential cake. Every slice is a special occasion.",
-      ingredients: ["200g butter", "200g caster sugar", "4 eggs", "200g self-raising flour", "1 tsp baking powder", "Jam", "200ml double cream", "Icing sugar"],
-      steps: [
-        "Preheat oven to 180°C. Grease two 20cm sandwich tins.",
-        "Beat butter and sugar until pale. Add eggs one at a time.",
-        "Fold in flour and baking powder.",
-        "Divide between tins, bake 20–25 minutes until springy.",
-        "Cool completely. Spread one sponge with jam and cream, top with the other and dust with icing sugar.",
-      ],
-    },
-  ],
-
   // ─── OVERWHELMED ────────────────────────────────────────────────────────────
   overwhelmed: [
     {

@@ -27,21 +27,13 @@ const moodFilters = [
 
 // Mood-to-vibe mapping for auto-suggesting filters
 const moodToFilter = {
-  tired: "coffee", sleepy: "coffee",
-  happy: "dessert", joyful: "dessert",
-  sad: "cozy", heartbroken: "cozy",
-  anxious: "cozy", stressed: "cozy",
-  romantic: "romantic", flirty: "romantic", "date-night": "romantic",
-  calm: "coffee", peaceful: "coffee",
-  bored: "fast", curious: "international",
-  adventurous: "international",
-  angry: "spicy", hangry: "fast",
-  focused: "healthy", productive: "healthy",
-  social: "bar", celebrating: "steakhouse",
-  nostalgic: "diner", lonely: "diner",
-  lazy: "brunch", chill: "brunch",
-  overwhelmed: "cozy", recovering: "cozy",
-  rushed: "fast", excited: "dessert", energetic: "bar",
+  tired: "coffee",
+  happy: "dessert",
+  sad: "cozy",
+  "date-night": "romantic",
+  chill: "brunch",
+  overwhelmed: "cozy",
+  rushed: "fast",
 };
 
 export default function EatOutPage() {

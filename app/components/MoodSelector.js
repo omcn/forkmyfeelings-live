@@ -9,9 +9,6 @@ const moodEmojis = {
   rushed: "⏰",
   "date-night": "💘",
   chill: "🧊",
-  recovering: "🛌",
-  bored: "😐",
-  nostalgic: "🕰️",
   overwhelmed: "😵‍💫",
 };
 
@@ -45,10 +42,7 @@ const rascalVideos = {
   rushed: "/videos/rascal-rushed.mp4",
   happy: "/videos/rascal-happy1.mp4",
   overwhelmed: "/videos/rascal-overwhelmed.mp4",
-  nostalgic: "/videos/rascal-nostalgic.mp4",
   "date-night": "/videos/rascal-date-night.mp4",
-  recovering: "/videos/rascal-recovering.mp4",
-  bored: "/videos/rascal-bored.mp4",
 };
 
 export default function MoodSelector({

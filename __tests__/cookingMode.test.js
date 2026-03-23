@@ -21,9 +21,8 @@ jest.mock("../app/components/RascalSpaceGlide", () => () => <div data-testid="sp
 jest.mock("../app/components/MoodSelector", () => ({
   __esModule: true,
   moodEmojis: {
-    happy: "😊", sad: "😢", tired: "😴", rushed: "⏰",
-    "date-night": "💘", chill: "🧊", recovering: "🛌",
-    bored: "😐", nostalgic: "🕰️", overwhelmed: "😵‍💫",
+    tired: "😴", happy: "😊", sad: "😢", rushed: "⏰",
+    "date-night": "💘", chill: "🧊", overwhelmed: "😵‍💫",
   },
 }));
 
