@@ -28,14 +28,14 @@ const moodToFilter = {
   anxious: "cozy", stressed: "cozy",
   romantic: "romantic", flirty: "romantic", "date-night": "romantic",
   calm: "coffee", peaceful: "coffee",
-  bored: "fast", curious: "international",
+  curious: "international",
   adventurous: "international",
   angry: "spicy", hangry: "fast",
   focused: "healthy", productive: "healthy",
   social: "bar", celebrating: "steakhouse",
-  nostalgic: "diner", lonely: "diner",
+  lonely: "diner",
   lazy: "brunch", chill: "brunch",
-  overwhelmed: "cozy", recovering: "cozy",
+  overwhelmed: "cozy",
   rushed: "fast", excited: "dessert", energetic: "bar",
 };
 

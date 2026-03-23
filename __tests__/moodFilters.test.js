@@ -7,14 +7,14 @@ const moodToFilter = {
   anxious: "cozy", stressed: "cozy",
   romantic: "romantic", flirty: "romantic", "date-night": "romantic",
   calm: "coffee", peaceful: "coffee",
-  bored: "fast", curious: "international",
+  curious: "international",
   adventurous: "international",
   angry: "spicy", hangry: "fast",
   focused: "healthy", productive: "healthy",
   social: "bar", celebrating: "steakhouse",
-  nostalgic: "diner", lonely: "diner",
+  lonely: "diner",
   lazy: "brunch", chill: "brunch",
-  overwhelmed: "cozy", recovering: "cozy",
+  overwhelmed: "cozy",
   rushed: "fast", excited: "dessert", energetic: "bar",
 };
 
@@ -81,6 +81,5 @@ describe("Eat-out mood filter mapping", () => {
   test("rushed/hangry moods map to fast food", () => {
     expect(moodToFilter["rushed"]).toBe("fast");
     expect(moodToFilter["hangry"]).toBe("fast");
-    expect(moodToFilter["bored"]).toBe("fast");
   });
 });

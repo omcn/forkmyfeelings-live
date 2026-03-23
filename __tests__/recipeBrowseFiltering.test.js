@@ -18,9 +18,9 @@ function filterRecipes(recipes, search, filterMood) {
 }
 
 const mockRecipes = [
-  { id: 1, name: "Comfort Mac & Cheese", description: "Creamy pasta comfort", emoji: "🧀", moods: ["sad", "nostalgic"] },
+  { id: 1, name: "Comfort Mac & Cheese", description: "Creamy pasta comfort", emoji: "🧀", moods: ["sad", "tired"] },
   { id: 2, name: "Energizer Smoothie", description: "Green power boost", emoji: "🥤", moods: ["tired", "happy"] },
-  { id: 3, name: "Spicy Ramen", description: "Fiery noodle soup", emoji: "🍜", moods: ["bored", "chill"] },
+  { id: 3, name: "Spicy Ramen", description: "Fiery noodle soup", emoji: "🍜", moods: ["chill", "happy"] },
   { id: 4, name: "Date Night Risotto", description: "Romantic Italian dinner", emoji: "🍝", moods: ["date-night", "happy"] },
   { id: 5, name: "Quick Avocado Toast", description: "Fast and healthy", emoji: "🥑", moods: ["rushed", "happy"] },
   { id: 6, name: "Chocolate Lava Cake", description: "Rich dessert", emoji: "🍫", moods: '["happy","date-night"]' }, // JSON string moods
@@ -63,7 +63,7 @@ describe("Recipe search filtering", () => {
 describe("Recipe mood filtering", () => {
   test("filter by mood returns matching recipes", () => {
     const result = filterRecipes(mockRecipes, "", "happy");
-    expect(result).toHaveLength(4); // Smoothie, Risotto, Avocado Toast, Chocolate Cake (JSON string parsed)
+    expect(result).toHaveLength(5); // Smoothie, Ramen, Risotto, Avocado Toast, Chocolate Cake (JSON string parsed)
   });
 
   test("filter by sad mood", () => {
@@ -98,7 +98,7 @@ describe("Combined search and mood filtering", () => {
   });
 
   test("search matches but mood doesn't returns empty", () => {
-    const result = filterRecipes(mockRecipes, "ramen", "happy");
+    const result = filterRecipes(mockRecipes, "ramen", "sad");
     expect(result).toHaveLength(0);
   });
 
@@ -133,10 +133,10 @@ describe("Edge cases", () => {
 });
 
 describe("MOODS constant", () => {
-  const MOODS = ["tired", "happy", "sad", "rushed", "date-night", "chill", "recovering", "bored", "nostalgic", "overwhelmed"];
+  const MOODS = ["tired", "happy", "sad", "rushed", "date-night", "chill", "overwhelmed"];
 
-  test("has 10 moods", () => {
-    expect(MOODS).toHaveLength(10);
+  test("has 7 moods", () => {
+    expect(MOODS).toHaveLength(7);
   });
 
   test("all moods are unique", () => {

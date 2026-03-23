@@ -2,7 +2,7 @@
 
 const VALID_MOODS = [
   "tired", "happy", "sad", "rushed", "date-night", "chill",
-  "recovering", "bored", "nostalgic", "overwhelmed",
+  "overwhelmed",
 ];
 
 function validate(form) {
