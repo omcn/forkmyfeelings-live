@@ -708,10 +708,10 @@ export default function Home() {
             haptic={haptic}
           />
 
-          {/* Static centered button — no fixed positioning needed */}
-          <div className="mt-8 sm:mt-12 w-full flex justify-center">
+          {/* Two equal CTA buttons — Cook or Eat Out */}
+          <div className="mt-8 sm:mt-12 w-full flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
             <motion.button
-              aria-label={selectedMoods.length > 0 ? "Get recipe suggestion" : "Select a mood first"}
+              aria-label={selectedMoods.length > 0 ? "Get recipe suggestion to cook at home" : "Select a mood first"}
               disabled={selectedMoods.length === 0 || feedMeLoading}
               onClick={async () => {
                 if (selectedMoods.length === 0 || feedMeLoading) return;
@@ -729,7 +729,7 @@ export default function Home() {
                 ? { scale: [1, 1.04, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } }
                 : { scale: 1 }
               }
-              className={`font-semibold py-5 px-14 rounded-full shadow-xl transition ${
+              className={`w-full sm:w-auto font-semibold py-5 px-10 sm:px-14 rounded-full shadow-xl transition ${
                 feedMeLoading
                   ? "bg-pink-400 text-white/80 cursor-wait"
                   : selectedMoods.length > 0
@@ -738,16 +738,34 @@ export default function Home() {
               }`}
               whileTap={selectedMoods.length > 0 && !feedMeLoading ? { scale: 0.97 } : {}}
             >
-              {feedMeLoading ? "Finding recipes..." : selectedMoods.length > 0 ? "Feed Me 🍴" : "Pick a mood ↑"}
+              {feedMeLoading ? "Finding recipes..." : selectedMoods.length > 0 ? "Cook at Home 🍳" : "Pick a mood ↑"}
             </motion.button>
-          </div>
 
-          <a
-            href="/eat-out"
-            className="mt-4 text-sm text-purple-600 hover:text-purple-800 font-medium transition"
-          >
-            or find somewhere to eat out 🍽️
-          </a>
+            <motion.a
+              href="/eat-out"
+              aria-label={selectedMoods.length > 0 ? "Find somewhere to eat out" : "Select a mood first to find places"}
+              onClick={(e) => {
+                if (selectedMoods.length === 0) {
+                  e.preventDefault();
+                  return;
+                }
+                haptic("medium");
+                bloopSound.play();
+              }}
+              animate={selectedMoods.length > 0
+                ? { scale: [1, 1.04, 1], transition: { repeat: Infinity, duration: 2, ease: "easeInOut", delay: 0.3 } }
+                : { scale: 1 }
+              }
+              className={`w-full sm:w-auto text-center font-semibold py-5 px-10 sm:px-14 rounded-full shadow-xl transition inline-block ${
+                selectedMoods.length > 0
+                  ? "bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white cursor-pointer"
+                  : "bg-purple-200 text-purple-400 cursor-default pointer-events-none"
+              }`}
+              whileTap={selectedMoods.length > 0 ? { scale: 0.97 } : {}}
+            >
+              Eat Out 🍽️
+            </motion.a>
+          </div>
         </>
       )}
 
