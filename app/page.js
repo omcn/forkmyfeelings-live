@@ -470,25 +470,6 @@ export default function Home() {
 
   const handleMultiMoodSubmit = async () => {
     if (selectedMoods.length === 0) return;
-    if (!user?.id) return;
-
-    const lastSuggestedId = localStorage.getItem("lastMealId");
-
-    const { data: userRatings, error: userError } = await supabase
-      .from("recipe_ratings")
-      .select("recipe_id, rating, mood")
-      .eq("user_id", user.id)
-      .in("mood", selectedMoods);
-
-    const { data: globalRatings, error: globalError } = await supabase
-      .from("recipe_ratings")
-      .select("recipe_id, rating, mood")
-      .in("mood", selectedMoods);
-
-    if (userError || globalError) {
-      toast.error("Error fetching ratings.");
-      return;
-    }
 
     const allMatchingRecipes = selectedMoods.flatMap((mood) => recipes[mood] || []);
     const uniqueRecipes = Array.from(new Map(
@@ -502,11 +483,33 @@ export default function Home() {
 
     setNoRecipesFound(false);
 
+    const lastSuggestedId = localStorage.getItem("lastMealId");
     let cookHistory = [];
     try {
       const cookHistoryRaw = localStorage.getItem("fmf_cook_history");
       cookHistory = cookHistoryRaw ? JSON.parse(cookHistoryRaw) : [];
     } catch {}
+
+    // Fetch ratings in parallel with a 3s timeout — fall back to empty if slow
+    let userRatings = [];
+    let globalRatings = [];
+
+    if (user?.id) {
+      try {
+        const timeout = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms));
+        const [userResult, globalResult] = await Promise.race([
+          Promise.all([
+            supabase.from("recipe_ratings").select("recipe_id, rating, mood").eq("user_id", user.id).in("mood", selectedMoods),
+            supabase.from("recipe_ratings").select("recipe_id, rating, mood").in("mood", selectedMoods),
+          ]),
+          timeout(3000),
+        ]);
+        if (!userResult.error) userRatings = userResult.data || [];
+        if (!globalResult.error) globalRatings = globalResult.data || [];
+      } catch {
+        // Timeout or error — proceed with empty ratings (random suggestion)
+      }
+    }
 
     const [suggestion] = getMealSuggestions({
       userRatings,
@@ -721,7 +724,6 @@ export default function Home() {
               disabled={selectedMoods.length === 0 || feedMeLoading}
               onClick={async () => {
                 if (selectedMoods.length === 0 || feedMeLoading) return;
-                if (!requireAuth()) return;
                 setFeedMeLoading(true);
                 try {
                   chimeSound.play();
