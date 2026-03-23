@@ -14,6 +14,7 @@ export default function InsightsPage() {
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
+      try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!isMounted) return;
       if (!session?.user) { router.push("/"); return; }
@@ -45,6 +46,10 @@ export default function InsightsPage() {
       }
 
       setLoading(false);
+      } catch (err) {
+        console.error("Insights load error:", err);
+        if (isMounted) setLoading(false);
+      }
     };
     load();
     return () => { isMounted = false; };
