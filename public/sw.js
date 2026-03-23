@@ -1,4 +1,4 @@
-const CACHE = "fmf-v2";
+const CACHE = "fmf-v3";
 const RECIPE_CACHE = "fmf-recipes";
 const OFFLINE_ASSETS = [
   "/",
