@@ -66,22 +66,16 @@ export default function MoodSelector({
   haptic,
 }) {
   const containerSize = Math.min((windowWidth || 390) - 32, 460);
-  const btnWidth = isMobile ? Math.max(containerSize * 0.26, 82) : 130;
-  const btnHeight = isMobile ? 60 : 68;
 
-  // Custom positions for 7 moods: tighter bottom, no dead space
-  // Positions are [angle°, radiusMultiplier] — 0° = right, -90° = top
-  const moodPositions = [
-    [-90, 1],      // top center
-    [-35, 1],      // upper right
-    [20, 1],       // right
-    [70, 0.95],    // lower right (nudged closer)
-    [110, 0.95],   // lower left (nudged closer)
-    [160, 1],      // left
-    [215, 1],      // upper left
-  ];
-  const maxRadius = containerSize / 2 - btnWidth / 2 - 4;
-  const baseRadius = Math.min(containerSize * 0.44, maxRadius);
+  // Petal dimensions — wider arc shape
+  const petalWidth = isMobile ? Math.max(containerSize * 0.30, 90) : 140;
+  const petalHeight = isMobile ? 54 : 62;
+
+  // Even spacing for 7 petals — 360/7 ≈ 51.4° each
+  const petalAngleSpan = 360 / 7;
+
+  const maxRadius = containerSize / 2 - petalHeight / 2 - 2;
+  const baseRadius = Math.min(containerSize * 0.40, maxRadius);
 
   const currentMood = selectedMoods[0];
   const videoSrc = useMemo(() => rascalVideos[currentMood] || "/videos/rascal-idle.mp4", [currentMood]);
@@ -115,12 +109,20 @@ export default function MoodSelector({
         }}
       >
         {moodKeys.map((moodKey, i) => {
-          const [angle, rMult] = moodPositions[i] || [0, 1];
-          const radius = baseRadius * rMult;
-          const x = radius * Math.cos((angle * Math.PI) / 180);
-          const y = radius * Math.sin((angle * Math.PI) / 180);
+          // Evenly spaced petals starting from top
+          const angle = (petalAngleSpan * i) - 90;
+          const rad = (angle * Math.PI) / 180;
+          const x = baseRadius * Math.cos(rad);
+          const y = baseRadius * Math.sin(rad);
           const isSelected = selectedMoods.includes(moodKey);
           const colors = moodColors[moodKey] || moodColors.happy;
+
+          // Rotation so each petal faces outward from center
+          const rotation = angle + 90;
+
+          // Inner edge curves to match Rascal's circle, outer edge is more rounded
+          const innerRadius = isMobile ? "8px" : "10px";
+          const outerRadius = "50%";
 
           return (
             <motion.button
@@ -131,14 +133,15 @@ export default function MoodSelector({
               tabIndex={0}
               style={{
                 position: "absolute",
-                left: x - btnWidth / 2,
-                top: y - btnHeight / 2,
-                width: btnWidth,
-                height: btnHeight,
-                borderRadius: "999px",
+                left: x - petalWidth / 2,
+                top: y - petalHeight / 2,
+                width: petalWidth,
+                height: petalHeight,
+                transform: `rotate(${rotation}deg)`,
+                borderRadius: `${outerRadius} ${outerRadius} ${innerRadius} ${innerRadius}`,
               }}
               variants={{
-                hidden: { opacity: 0, scale: 0.8, originX: "50%", originY: "50%" },
+                hidden: { opacity: 0, scale: 0.6, originX: "50%", originY: "50%" },
                 visible: { opacity: 1, scale: 1, originX: "50%", originY: "50%" },
               }}
               onClick={() => {
@@ -154,18 +157,22 @@ export default function MoodSelector({
                 }
               }}
               whileTap={{ scale: 0.9 }}
-              animate={isSelected ? { scale: 1.1 } : { scale: 1 }}
+              animate={isSelected ? { scale: 1.12 } : { scale: 1 }}
               className={`border-2 transition-all duration-200 focus:ring-2 focus:ring-pink-400 focus:outline-none ${
                 isSelected
                   ? `${colors.activeBg} ${colors.activeBorder} shadow-lg ${colors.shadow}`
                   : `${colors.bg} ${colors.border} shadow-md hover:shadow-lg`
               }`}
             >
-              <div className="flex flex-col items-center justify-center gap-0.5">
-                <span style={{ fontSize: isMobile ? "1.5rem" : "1.8rem", lineHeight: 1 }}>
+              {/* Counter-rotate content so emoji + text stay upright */}
+              <div
+                className="flex flex-col items-center justify-center gap-0.5 w-full h-full"
+                style={{ transform: `rotate(${-rotation}deg)` }}
+              >
+                <span style={{ fontSize: isMobile ? "1.4rem" : "1.7rem", lineHeight: 1 }}>
                   {moodEmojis[moodKey] || "🍽️"}
                 </span>
-                <span className={`${isMobile ? "text-[9px]" : "text-xs"} font-semibold capitalize truncate w-full text-center block ${
+                <span className={`${isMobile ? "text-[8px]" : "text-[11px]"} font-semibold capitalize truncate w-full text-center block leading-tight ${
                   isSelected ? "text-gray-800" : "text-gray-500"
                 }`}>
                   {moodKey.replace("-", " ")}
