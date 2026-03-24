@@ -12,37 +12,16 @@ const moodEmojis = {
   overwhelmed: "😵‍💫",
 };
 
-// Each mood gets its own color identity
-const moodColors = {
-  tired: { bg: "bg-indigo-50", border: "border-indigo-200", activeBg: "bg-indigo-200", activeBorder: "border-indigo-400", shadow: "shadow-indigo-100" },
-  happy: { bg: "bg-amber-50", border: "border-amber-200", activeBg: "bg-amber-200", activeBorder: "border-amber-400", shadow: "shadow-amber-100" },
-  sad: { bg: "bg-sky-50", border: "border-sky-200", activeBg: "bg-sky-200", activeBorder: "border-sky-400", shadow: "shadow-sky-100" },
-  rushed: { bg: "bg-red-50", border: "border-red-200", activeBg: "bg-red-200", activeBorder: "border-red-400", shadow: "shadow-red-100" },
-  "date-night": { bg: "bg-pink-50", border: "border-pink-200", activeBg: "bg-pink-200", activeBorder: "border-pink-400", shadow: "shadow-pink-100" },
-  chill: { bg: "bg-cyan-50", border: "border-cyan-200", activeBg: "bg-cyan-200", activeBorder: "border-cyan-400", shadow: "shadow-cyan-100" },
-  overwhelmed: { bg: "bg-orange-50", border: "border-orange-200", activeBg: "bg-orange-200", activeBorder: "border-orange-400", shadow: "shadow-orange-100" },
+// Each mood gets its own color identity — using hex for SVG fills
+const moodStyles = {
+  tired: { fill: "#eef2ff", activeFill: "#c7d2fe", stroke: "#a5b4fc", activeStroke: "#818cf8" },
+  happy: { fill: "#fffbeb", activeFill: "#fde68a", stroke: "#fcd34d", activeStroke: "#f59e0b" },
+  sad: { fill: "#f0f9ff", activeFill: "#bae6fd", stroke: "#7dd3fc", activeStroke: "#38bdf8" },
+  rushed: { fill: "#fef2f2", activeFill: "#fecaca", stroke: "#fca5a5", activeStroke: "#f87171" },
+  "date-night": { fill: "#fdf2f8", activeFill: "#fbcfe8", stroke: "#f9a8d4", activeStroke: "#f472b6" },
+  chill: { fill: "#ecfeff", activeFill: "#a5f3fc", stroke: "#67e8f9", activeStroke: "#22d3ee" },
+  overwhelmed: { fill: "#fff7ed", activeFill: "#fed7aa", stroke: "#fdba74", activeStroke: "#fb923c" },
 };
-
-function MoodTooltip({ label, children }) {
-  const [show, setShow] = useState(false);
-
-  return (
-    <div
-      className="relative flex items-center justify-center"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-      onTouchStart={() => setShow(true)}
-      onTouchEnd={() => setShow(false)}
-    >
-      {children}
-      {show && (
-        <div className="absolute bottom-full mb-1 px-2 py-1 text-xs rounded bg-black text-white shadow z-50 whitespace-nowrap">
-          {label}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export { moodEmojis };
 
@@ -56,6 +35,37 @@ const rascalVideos = {
   "date-night": "/videos/rascal-date-night.mp4",
 };
 
+// Generate SVG arc path for a donut segment
+function arcPath(cx, cy, innerR, outerR, startAngle, endAngle) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const cos = Math.cos;
+  const sin = Math.sin;
+
+  const s = toRad(startAngle);
+  const e = toRad(endAngle);
+  const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+
+  // Outer arc: start → end (clockwise)
+  const ox1 = cx + outerR * cos(s);
+  const oy1 = cy + outerR * sin(s);
+  const ox2 = cx + outerR * cos(e);
+  const oy2 = cy + outerR * sin(e);
+
+  // Inner arc: end → start (counter-clockwise)
+  const ix1 = cx + innerR * cos(e);
+  const iy1 = cy + innerR * sin(e);
+  const ix2 = cx + innerR * cos(s);
+  const iy2 = cy + innerR * sin(s);
+
+  return [
+    `M ${ox1} ${oy1}`,
+    `A ${outerR} ${outerR} 0 ${largeArc} 1 ${ox2} ${oy2}`,
+    `L ${ix1} ${iy1}`,
+    `A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix2} ${iy2}`,
+    `Z`,
+  ].join(" ");
+}
+
 export default function MoodSelector({
   recipes,
   selectedMoods,
@@ -66,20 +76,20 @@ export default function MoodSelector({
   haptic,
 }) {
   const containerSize = Math.min((windowWidth || 390) - 32, 460);
+  const center = containerSize / 2;
 
-  // Petal dimensions — wider arc shape
-  const petalWidth = isMobile ? Math.max(containerSize * 0.30, 90) : 140;
-  const petalHeight = isMobile ? 54 : 62;
+  // Ring dimensions
+  const rascalSize = Math.min(containerSize * 0.42, 220);
+  const innerRadius = rascalSize / 2 + (isMobile ? 6 : 8); // small gap from Rascal
+  const outerRadius = containerSize / 2 - 4; // nearly to container edge
 
-  // Even spacing for 7 petals — 360/7 ≈ 51.4° each
-  const petalAngleSpan = 360 / 7;
-
-  const maxRadius = containerSize / 2 - petalHeight / 2 - 2;
-  const baseRadius = Math.min(containerSize * 0.40, maxRadius);
+  // Gap between petals in degrees
+  const gap = 4;
+  const totalMoods = 7;
+  const sliceAngle = 360 / totalMoods;
 
   const currentMood = selectedMoods[0];
   const videoSrc = useMemo(() => rascalVideos[currentMood] || "/videos/rascal-idle.mp4", [currentMood]);
-  const rascalSize = Math.min(containerSize * 0.46, 250);
 
   const moodKeys = useMemo(
     () => Object.keys(recipes).filter((k) => k !== "default"),
@@ -91,97 +101,123 @@ export default function MoodSelector({
       className="relative mx-auto"
       style={{ width: containerSize, height: containerSize }}
     >
-      {/* Mood Buttons in orbit */}
-      <motion.div
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          width: 0,
-          height: 0,
-        }}
-        initial="hidden"
-        animate="visible"
-        variants={{
-          visible: {
-            transition: { staggerChildren: 0.04, delayChildren: 0.5 },
-          },
-        }}
+      {/* SVG petal ring */}
+      <svg
+        width={containerSize}
+        height={containerSize}
+        viewBox={`0 0 ${containerSize} ${containerSize}`}
+        className="absolute inset-0"
+        style={{ zIndex: 10 }}
       >
-        {moodKeys.map((moodKey, i) => {
-          // Evenly spaced petals starting from top
-          const angle = (petalAngleSpan * i) - 90;
-          const rad = (angle * Math.PI) / 180;
-          const x = baseRadius * Math.cos(rad);
-          const y = baseRadius * Math.sin(rad);
-          const isSelected = selectedMoods.includes(moodKey);
-          const colors = moodColors[moodKey] || moodColors.happy;
+        <defs>
+          {/* Define clip paths and filters */}
+          <filter id="petal-shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.15" />
+          </filter>
+          <filter id="petal-shadow-active" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" floodOpacity="0.25" />
+          </filter>
+        </defs>
 
-          // Rotation so each petal faces outward from center
-          const rotation = angle + 90;
+        <motion.g
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: { transition: { staggerChildren: 0.06, delayChildren: 0.3 } },
+          }}
+        >
+          {moodKeys.map((moodKey, i) => {
+            const startAngle = sliceAngle * i - 90 + gap / 2;
+            const endAngle = sliceAngle * (i + 1) - 90 - gap / 2;
+            const midAngle = (startAngle + endAngle) / 2;
+            const midRad = (midAngle * Math.PI) / 180;
 
-          // Inner edge curves to match Rascal's circle, outer edge is more rounded
-          const innerRadius = isMobile ? "8px" : "10px";
-          const outerRadius = "50%";
+            const isSelected = selectedMoods.includes(moodKey);
+            const style = moodStyles[moodKey] || moodStyles.happy;
 
-          return (
-            <motion.button
-              key={moodKey}
-              role="radio"
-              aria-checked={isSelected}
-              aria-label={`${moodKey.replace("-", " ")} mood`}
-              tabIndex={0}
-              style={{
-                position: "absolute",
-                left: x - petalWidth / 2,
-                top: y - petalHeight / 2,
-                width: petalWidth,
-                height: petalHeight,
-                transform: `rotate(${rotation}deg)`,
-                borderRadius: `${outerRadius} ${outerRadius} ${innerRadius} ${innerRadius}`,
-              }}
-              variants={{
-                hidden: { opacity: 0, scale: 0.6, originX: "50%", originY: "50%" },
-                visible: { opacity: 1, scale: 1, originX: "50%", originY: "50%" },
-              }}
-              onClick={() => {
-                clickSound?.play();
-                haptic?.("light");
-                const next = selectedMoods[0] === moodKey ? [] : [moodKey];
-                onMoodChange(next);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
-              whileTap={{ scale: 0.9 }}
-              animate={isSelected ? { scale: 1.12 } : { scale: 1 }}
-              className={`border-2 transition-all duration-200 focus:ring-2 focus:ring-pink-400 focus:outline-none ${
-                isSelected
-                  ? `${colors.activeBg} ${colors.activeBorder} shadow-lg ${colors.shadow}`
-                  : `${colors.bg} ${colors.border} shadow-md hover:shadow-lg`
-              }`}
-            >
-              {/* Counter-rotate content so emoji + text stay upright */}
-              <div
-                className="flex flex-col items-center justify-center gap-0.5 w-full h-full"
-                style={{ transform: `rotate(${-rotation}deg)` }}
+            // Position label at middle of the arc segment
+            const labelRadius = (innerRadius + outerRadius) / 2;
+            const labelX = center + labelRadius * Math.cos(midRad);
+            const labelY = center + labelRadius * Math.sin(midRad);
+
+            // Emoji slightly above center, text slightly below
+            const emojiRadius = labelRadius - (isMobile ? 6 : 8);
+            const textRadius = labelRadius + (isMobile ? 12 : 14);
+            const emojiX = center + emojiRadius * Math.cos(midRad);
+            const emojiY = center + emojiRadius * Math.sin(midRad);
+            const textX = center + textRadius * Math.cos(midRad);
+            const textY = center + textRadius * Math.sin(midRad);
+
+            const path = arcPath(center, center, innerRadius, outerRadius, startAngle, endAngle);
+
+            return (
+              <motion.g
+                key={moodKey}
+                role="radio"
+                aria-checked={isSelected}
+                aria-label={`${moodKey.replace("-", " ")} mood`}
+                tabIndex={0}
+                style={{ cursor: "pointer", outline: "none" }}
+                variants={{
+                  hidden: { opacity: 0, scale: 0.8 },
+                  visible: { opacity: 1, scale: 1 },
+                }}
+                whileTap={{ scale: 0.95 }}
+                animate={isSelected ? { scale: 1.05 } : { scale: 1 }}
+                onClick={() => {
+                  clickSound?.play();
+                  haptic?.("light");
+                  const next = selectedMoods[0] === moodKey ? [] : [moodKey];
+                  onMoodChange(next);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+                  }
+                }}
+                filter={isSelected ? "url(#petal-shadow-active)" : "url(#petal-shadow)"}
               >
-                <span style={{ fontSize: isMobile ? "1.4rem" : "1.7rem", lineHeight: 1 }}>
+                {/* Arc segment shape */}
+                <path
+                  d={path}
+                  fill={isSelected ? style.activeFill : style.fill}
+                  stroke={isSelected ? style.activeStroke : style.stroke}
+                  strokeWidth={isSelected ? 2.5 : 1.5}
+                />
+
+                {/* Emoji */}
+                <text
+                  x={emojiX}
+                  y={emojiY}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  style={{ fontSize: isMobile ? "1.5rem" : "1.8rem", pointerEvents: "none" }}
+                >
                   {moodEmojis[moodKey] || "🍽️"}
-                </span>
-                <span className={`${isMobile ? "text-[8px]" : "text-[11px]"} font-semibold capitalize truncate w-full text-center block leading-tight ${
-                  isSelected ? "text-gray-800" : "text-gray-500"
-                }`}>
+                </text>
+
+                {/* Label */}
+                <text
+                  x={textX}
+                  y={textY}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  style={{
+                    fontSize: isMobile ? "0.55rem" : "0.7rem",
+                    fontWeight: 600,
+                    fill: isSelected ? "#1f2937" : "#6b7280",
+                    textTransform: "capitalize",
+                    pointerEvents: "none",
+                  }}
+                >
                   {moodKey.replace("-", " ")}
-                </span>
-              </div>
-            </motion.button>
-          );
-        })}
-      </motion.div>
+                </text>
+              </motion.g>
+            );
+          })}
+        </motion.g>
+      </svg>
 
       {/* Rascal center animation */}
       <div
