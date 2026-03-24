@@ -68,8 +68,20 @@ export default function MoodSelector({
   const containerSize = Math.min((windowWidth || 390) - 32, 460);
   const btnWidth = isMobile ? Math.max(containerSize * 0.26, 82) : 130;
   const btnHeight = isMobile ? 60 : 68;
+
+  // Custom positions for 7 moods: tighter bottom, no dead space
+  // Positions are [angle°, radiusMultiplier] — 0° = right, -90° = top
+  const moodPositions = [
+    [-90, 1],      // top center
+    [-35, 1],      // upper right
+    [20, 1],       // right
+    [70, 0.95],    // lower right (nudged closer)
+    [110, 0.95],   // lower left (nudged closer)
+    [160, 1],      // left
+    [215, 1],      // upper left
+  ];
   const maxRadius = containerSize / 2 - btnWidth / 2 - 4;
-  const radius = Math.min(containerSize * 0.44, maxRadius);
+  const baseRadius = Math.min(containerSize * 0.44, maxRadius);
 
   const currentMood = selectedMoods[0];
   const videoSrc = useMemo(() => rascalVideos[currentMood] || "/videos/rascal-idle.mp4", [currentMood]);
@@ -103,8 +115,8 @@ export default function MoodSelector({
         }}
       >
         {moodKeys.map((moodKey, i) => {
-          const total = moodKeys.length;
-          const angle = (360 / total) * i - 90;
+          const [angle, rMult] = moodPositions[i] || [0, 1];
+          const radius = baseRadius * rMult;
           const x = radius * Math.cos((angle * Math.PI) / 180);
           const y = radius * Math.sin((angle * Math.PI) / 180);
           const isSelected = selectedMoods.includes(moodKey);

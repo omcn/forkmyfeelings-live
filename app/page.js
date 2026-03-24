@@ -502,7 +502,7 @@ export default function Home() {
             supabase.from("recipe_ratings").select("recipe_id, rating, mood").eq("user_id", user.id).in("mood", selectedMoods),
             supabase.from("recipe_ratings").select("recipe_id, rating, mood").in("mood", selectedMoods),
           ]),
-          timeout(3000),
+          timeout(1500),
         ]);
         if (!userResult.error) userRatings = userResult.data || [];
         if (!globalResult.error) globalRatings = globalResult.data || [];
@@ -761,7 +761,7 @@ export default function Home() {
               }`}
               whileTap={selectedMoods.length > 0 && !feedMeLoading ? { scale: 0.95 } : {}}
             >
-              {feedMeLoading ? "Finding..." : "Cook at Home"}
+              {feedMeLoading ? "Finding..." : selectedMoods.length > 0 ? "Cook at Home 🍳" : "Pick a mood ↑"}
             </motion.button>
 
             <motion.a
@@ -786,7 +786,7 @@ export default function Home() {
               }`}
               whileTap={selectedMoods.length > 0 ? { scale: 0.95 } : {}}
             >
-              Eat Out
+              {selectedMoods.length > 0 ? "Eat Out 🍽️" : "Eat Out"}
             </motion.a>
           </div>
         </>
