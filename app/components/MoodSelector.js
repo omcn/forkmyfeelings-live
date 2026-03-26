@@ -140,14 +140,6 @@ export default function MoodSelector({
             const labelX = center + labelRadius * Math.cos(midRad);
             const labelY = center + labelRadius * Math.sin(midRad);
 
-            // Emoji slightly above center, text slightly below
-            const emojiRadius = labelRadius - (isMobile ? 6 : 8);
-            const textRadius = labelRadius + (isMobile ? 12 : 14);
-            const emojiX = center + emojiRadius * Math.cos(midRad);
-            const emojiY = center + emojiRadius * Math.sin(midRad);
-            const textX = center + textRadius * Math.cos(midRad);
-            const textY = center + textRadius * Math.sin(midRad);
-
             const path = arcPath(center, center, innerRadius, outerRadius, startAngle, endAngle);
 
             return (
@@ -157,13 +149,13 @@ export default function MoodSelector({
                 aria-checked={isSelected}
                 aria-label={`${moodKey.replace("-", " ")} mood`}
                 tabIndex={0}
-                style={{ cursor: "pointer", outline: "none" }}
+                style={{ cursor: "pointer", outline: "none", transformOrigin: `${labelX}px ${labelY}px` }}
                 variants={{
                   hidden: { opacity: 0, scale: 0.8 },
                   visible: { opacity: 1, scale: 1 },
                 }}
                 whileTap={{ scale: 0.95 }}
-                animate={isSelected ? { scale: 1.05 } : { scale: 1 }}
+                animate={isSelected ? { scale: 1.06 } : { scale: 1 }}
                 onClick={() => {
                   clickSound?.play();
                   haptic?.("light");
@@ -186,33 +178,43 @@ export default function MoodSelector({
                   strokeWidth={isSelected ? 2.5 : 1.5}
                 />
 
-                {/* Emoji */}
-                <text
-                  x={emojiX}
-                  y={emojiY}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  style={{ fontSize: isMobile ? "1.5rem" : "1.8rem", pointerEvents: "none" }}
+                {/* Emoji + Label using foreignObject so they stay upright */}
+                <foreignObject
+                  x={labelX - 40}
+                  y={labelY - (isMobile ? 22 : 26)}
+                  width={80}
+                  height={isMobile ? 44 : 52}
+                  style={{ pointerEvents: "none", overflow: "visible" }}
                 >
-                  {moodEmojis[moodKey] || "🍽️"}
-                </text>
-
-                {/* Label */}
-                <text
-                  x={textX}
-                  y={textY}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  style={{
-                    fontSize: isMobile ? "0.55rem" : "0.7rem",
-                    fontWeight: 600,
-                    fill: isSelected ? "#1f2937" : "#6b7280",
-                    textTransform: "capitalize",
-                    pointerEvents: "none",
-                  }}
-                >
-                  {moodKey.replace("-", " ")}
-                </text>
+                  <div
+                    xmlns="http://www.w3.org/1999/xhtml"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "100%",
+                      height: "100%",
+                      gap: "1px",
+                    }}
+                  >
+                    <span style={{ fontSize: isMobile ? "1.4rem" : "1.7rem", lineHeight: 1 }}>
+                      {moodEmojis[moodKey] || "🍽️"}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: isMobile ? "0.55rem" : "0.7rem",
+                        fontWeight: 600,
+                        color: isSelected ? "#1f2937" : "#6b7280",
+                        textTransform: "capitalize",
+                        textAlign: "center",
+                        lineHeight: 1.1,
+                      }}
+                    >
+                      {moodKey.replace("-", " ")}
+                    </span>
+                  </div>
+                </foreignObject>
               </motion.g>
             );
           })}
